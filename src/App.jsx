@@ -13,7 +13,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [pinningId, setPinningId] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
-  const { positions, update, add, remove, duplicate } = usePositions();
+  const { positions, update, add, remove, duplicate, loading } = usePositions();
 
   const selected = positions.find(p => p.id === selectedId) || null;
 
@@ -27,6 +27,8 @@ export default function App() {
     setPinningId(id);
     setPage('map');
   };
+
+  if (loading) return <div className="loading-screen"><div className="spinner" /><p>טוען נתונים מ-Firestore…</p></div>;
 
   return (
     <div className="app-shell">
