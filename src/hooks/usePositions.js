@@ -88,15 +88,32 @@ export default function usePositions() {
   }, []);
 
   const update = useCallback((id, changes) => {
-    const row = toRow({ ...changes, id });
-    const { id: _id, ...rest } = row;
-    Object.keys(rest).forEach(k => { if (rest[k] === undefined) delete rest[k]; });
-    supabase.from('positions').update(rest).eq('id', id).then();
+    const dbChanges = {};
+    if ('positionName' in changes) dbChanges.position_name = changes.positionName;
+    if ('complexName' in changes) dbChanges.complex_name = changes.complexName;
+    if ('businessName' in changes) dbChanges.business_name = changes.businessName;
+    if ('water' in changes) dbChanges.water = changes.water;
+    if ('electricity' in changes) dbChanges.electricity = changes.electricity;
+    if ('sewage' in changes) dbChanges.sewage = changes.sewage;
+    if ('buildingQuality' in changes) dbChanges.building_quality = changes.buildingQuality;
+    if ('environmentQuality' in changes) dbChanges.environment_quality = changes.environmentQuality;
+    if ('approval' in changes) dbChanges.approval = changes.approval;
+    if ('status' in changes) dbChanges.status = changes.status;
+    if ('notes' in changes) dbChanges.notes = changes.notes;
+    if ('foodTruckImageUrl' in changes) dbChanges.food_truck_image_url = changes.foodTruckImageUrl;
+    if ('foodTruckImageAlt' in changes) dbChanges.food_truck_image_alt = changes.foodTruckImageAlt;
+    if ('mapPin' in changes) {
+      dbChanges.map_pin_x = changes.mapPin.x;
+      dbChanges.map_pin_y = changes.mapPin.y;
+    }
+    if ('number' in changes) dbChanges.number = changes.number;
+    setPositions(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p));
+    supabase.from('positions').update(dbChanges).eq('id', id).then();
   }, []);
 
   const add = useCallback(() => {
     const id = crypto.randomUUID();
-    const row = toRow({
+    const newPos = {
       id,
       number: String(positions.length + 1),
       positionName: 'עמדה חדשה',
@@ -105,11 +122,6 @@ export default function usePositions() {
       water: 'טוב',
       electricity: 'טוב',
       sewage: 'טוב',
-      businessLicense: 'יש',
-      traffic: 'טוב',
-      waste: 'טוב',
-      accessibility: 'טוב',
-      lighting: 'טוב',
       buildingQuality: 'טוב',
       environmentQuality: 'טוב',
       approval: 'בבדיקה',
@@ -118,12 +130,14 @@ export default function usePositions() {
       mapPin: { x: 50, y: 50 },
       foodTruckImageUrl: '',
       foodTruckImageAlt: '',
-    });
-    supabase.from('positions').insert(row).then();
+    };
+    setPositions(prev => [...prev, newPos]);
+    supabase.from('positions').insert(toRow(newPos)).then();
     return id;
   }, [positions.length]);
 
   const remove = useCallback((id) => {
+    setPositions(prev => prev.filter(p => p.id !== id));
     supabase.from('positions').delete().eq('id', id).then();
   }, []);
 
