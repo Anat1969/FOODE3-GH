@@ -514,6 +514,99 @@ button {
 .settings-page h2 { margin-bottom: 16px; }
 .settings-grid { max-width: 500px; }
 
+/* Check Mark Buttons */
+.check-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 auto;
+}
+.check-mark.good {
+  background: rgba(52,168,83,0.2);
+  border-color: var(--green);
+  color: var(--green);
+}
+.check-mark.bad {
+  background: rgba(234,67,53,0.2);
+  border-color: var(--red);
+  color: var(--red);
+}
+.check-mark:hover { transform: scale(1.15); }
+
+.check-mark-field {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+}
+.check-mark-field.good {
+  background: rgba(52,168,83,0.15);
+  border-color: var(--green);
+  color: var(--green);
+}
+.check-mark-field.bad {
+  background: rgba(234,67,53,0.15);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.check-mark-small {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.check-mark-small.good { background: rgba(52,168,83,0.2); color: var(--green); }
+.check-mark-small.bad { background: rgba(234,67,53,0.2); color: var(--red); }
+
+.three-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 12px;
+  margin-bottom: 4px;
+}
+
+/* Map Layout */
+.map-header { margin-bottom: 12px; }
+.map-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 12px;
+}
+
+.map-info-card {
+  padding: 16px;
+  height: fit-content;
+}
+.map-info-card h3 { font-size: 16px; margin-bottom: 4px; }
+.map-info-card > p { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.map-info-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.map-info-status { margin-bottom: 8px; }
+.map-info-coords { font-size: 12px; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .map-layout { grid-template-columns: 1fr; }
+}
+
 /* Loading */
 .loading-screen {
   display: flex;

@@ -28,7 +28,7 @@ export default function App() {
     setPage('map');
   };
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /><p>טוען נתונים מ-Firestore…</p></div>;
+  if (loading) return <div className="loading-screen"><div className="spinner" /><p>טוען נתונים…</p></div>;
 
   return (
     <div className="app-shell">
@@ -53,6 +53,7 @@ export default function App() {
               remove={remove}
               duplicate={duplicate}
               goPin={goPin}
+              onClose={() => setSelectedId(null)}
             />
           </div>
         )}
