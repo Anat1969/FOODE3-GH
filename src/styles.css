@@ -165,7 +165,7 @@ body {
 
 .list-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 340px 1fr;
   gap: 12px;
 }
 
@@ -792,6 +792,8 @@ button {
   line-height: 1.5;
   white-space: pre-wrap;
 }
+
+td.col-name strong { font-weight: 600; font-size: 13px; }
 
 .notes-text {
   max-width: 120px;

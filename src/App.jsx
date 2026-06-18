@@ -38,6 +38,15 @@ export default function App() {
       <main className="main-area">
         {page === 'list' && (
           <div className="list-layout">
+            <DetailsPanel
+              selected={selected}
+              update={update}
+              remove={remove}
+              duplicate={duplicate}
+              goPin={goPin}
+              onClose={() => setSelectedId(null)}
+              editMode={editMode}
+            />
             <PositionsTable
               positions={positions}
               update={update}
@@ -47,15 +56,6 @@ export default function App() {
               setSelectedId={setSelectedId}
               setPage={setPage}
               setPinningId={setPinningId}
-              editMode={editMode}
-            />
-            <DetailsPanel
-              selected={selected}
-              update={update}
-              remove={remove}
-              duplicate={duplicate}
-              goPin={goPin}
-              onClose={() => setSelectedId(null)}
               editMode={editMode}
             />
           </div>

@@ -46,6 +46,7 @@ const COLUMNS = [
   { key: 'number', label: 'מספר' },
   { key: 'foodTruckImageUrl', label: 'תמונה', sortable: false },
   { key: 'positionName', label: 'שם עמדה' },
+  { key: 'approval', label: 'האם מקובלת' },
   { key: 'complexName', label: 'שם מתחם' },
   { key: 'businessName', label: 'שם עסק' },
   { key: 'water', label: 'מים' },
@@ -53,7 +54,6 @@ const COLUMNS = [
   { key: 'sewage', label: 'ביוב' },
   { key: 'buildingQuality', label: 'איכות מבנה' },
   { key: 'environmentQuality', label: 'איכות הסביבה' },
-  { key: 'approval', label: 'האם מקובלת' },
   { key: 'notes', label: 'הערות' },
   { key: '_pin', label: 'מפה', sortable: false },
 ];
@@ -111,14 +111,7 @@ export default function PositionsTable({ positions, update, add, remove, selecte
               <tr key={row.id} className={`${selectedId === row.id ? 'selected' : ''} approval-${approvalClass(row.approval)}`} onClick={() => setSelectedId(row.id)}>
                 <td>{row.number}</td>
                 <td>{row.foodTruckImageUrl ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb empty">—</span>}</td>
-                <td>{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : row.positionName}</td>
-                <td>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>
-                <td>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>
-                <td><CheckMark value={row.water} editMode={editMode} onChange={v => update(row.id, { water: v })} /></td>
-                <td><CheckMark value={row.electricity} editMode={editMode} onChange={v => update(row.id, { electricity: v })} /></td>
-                <td><CheckMark value={row.sewage} editMode={editMode} onChange={v => update(row.id, { sewage: v })} /></td>
-                <td><Chip value={row.buildingQuality} /></td>
-                <td><Chip value={row.environmentQuality} /></td>
+                <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
                 <td>
                   {editMode ? (
                     <InlineSelect value={row.approval} options={approvalOptions} type="status" onChange={v => update(row.id, { approval: v, status: v })} />
@@ -126,6 +119,13 @@ export default function PositionsTable({ positions, update, add, remove, selecte
                     <span className={`approval-light ${approvalClass(row.approval)}`}>{row.approval}</span>
                   )}
                 </td>
+                <td>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>
+                <td>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>
+                <td><CheckMark value={row.water} editMode={editMode} onChange={v => update(row.id, { water: v })} /></td>
+                <td><CheckMark value={row.electricity} editMode={editMode} onChange={v => update(row.id, { electricity: v })} /></td>
+                <td><CheckMark value={row.sewage} editMode={editMode} onChange={v => update(row.id, { sewage: v })} /></td>
+                <td><Chip value={row.buildingQuality} /></td>
+                <td><Chip value={row.environmentQuality} /></td>
                 <td>{editMode ? <input value={row.notes || ''} onChange={e => update(row.id, { notes: e.target.value })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>
                 <td><button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button></td>
               </tr>
