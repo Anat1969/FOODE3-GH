@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
 
 :root {
   --bg: #0f1923;
@@ -17,7 +18,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Heebo', sans-serif;
+  font-family: 'Calibri Light', 'Calibri', 'Rubik', 'Heebo', sans-serif;
+  font-weight: 300;
   background: var(--bg);
   color: var(--text);
   direction: rtl;
@@ -793,7 +795,7 @@ button {
   white-space: pre-wrap;
 }
 
-td.col-name strong { font-weight: 600; font-size: 13px; }
+td.col-name strong { font-weight: 600; font-size: 15px; }
 
 .notes-text {
   max-width: 120px;
