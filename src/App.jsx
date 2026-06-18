@@ -13,6 +13,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [pinningId, setPinningId] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const { positions, update, add, remove, duplicate, loading } = usePositions();
 
   const selected = positions.find(p => p.id === selectedId) || null;
@@ -32,7 +33,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <TopBar page={page} setPage={setPage} lastSaved={lastSaved} />
+      <TopBar page={page} setPage={setPage} lastSaved={lastSaved} editMode={editMode} setEditMode={setEditMode} />
       <StatsRail positions={positions} />
       <main className="main-area">
         {page === 'list' && (
@@ -46,6 +47,7 @@ export default function App() {
               setSelectedId={setSelectedId}
               setPage={setPage}
               setPinningId={setPinningId}
+              editMode={editMode}
             />
             <DetailsPanel
               selected={selected}
@@ -54,6 +56,7 @@ export default function App() {
               duplicate={duplicate}
               goPin={goPin}
               onClose={() => setSelectedId(null)}
+              editMode={editMode}
             />
           </div>
         )}
