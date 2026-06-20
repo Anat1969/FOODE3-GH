@@ -66,7 +66,27 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     if (mapRef.current || !mapContainer.current) return;
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      style: {
+        version: 8,
+        sources: {
+          satellite: {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+            attribution: '&copy; Esri'
+          }
+        },
+        layers: [{
+          id: 'satellite-layer',
+          type: 'raster',
+          source: 'satellite',
+          minzoom: 0,
+          maxzoom: 22
+        }]
+      },
       center: ASHDOD_CENTER,
       zoom: 14,
       pitch: 0,

@@ -689,7 +689,7 @@ button {
   filter: drop-shadow(0 0 8px var(--pin-color));
 }
 .map-marker-label {
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.85);
   color: #fff;
   font-size: 11px;
   font-family: 'Heebo', sans-serif;
