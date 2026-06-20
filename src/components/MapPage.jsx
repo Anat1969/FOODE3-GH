@@ -57,9 +57,8 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: ASHDOD_CENTER,
       zoom: 14,
-      pitch: 45,
-      bearing: -10,
-      antialias: true,
+      pitch: 0,
+      bearing: 0,
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-left');
     map.on('load', () => setMapReady(true));
