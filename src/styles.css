@@ -274,6 +274,23 @@ td input:focus, td select:focus {
   white-space: nowrap;
 }
 .pin-button:hover { background: var(--surface-hover); }
+.pinned-badge {
+  background: rgba(52,168,83,0.15);
+  color: #34a853;
+  border: 1px solid rgba(52,168,83,0.3);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.pinned-badge:hover { background: rgba(52,168,83,0.25); }
+.pinned-badge.inline {
+  margin-inline-start: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+}
 
 .pagination {
   display: flex;
@@ -658,6 +675,18 @@ button {
   flex-direction: column;
   align-items: center;
   pointer-events: auto;
+}
+.pinning-mode .map-marker-wrapper {
+  pointer-events: none;
+}
+.map-marker-pin {
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  transition: transform 0.2s;
+}
+.map-marker-pin.selected {
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 8px var(--pin-color));
 }
 .map-marker-label {
   background: rgba(0,0,0,0.75);

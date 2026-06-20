@@ -127,7 +127,11 @@ export default function PositionsTable({ positions, update, add, remove, selecte
                 <td><Chip value={row.buildingQuality} /></td>
                 <td><Chip value={row.environmentQuality} /></td>
                 <td>{editMode ? <input value={row.notes || ''} onChange={e => update(row.id, { notes: e.target.value })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>
-                <td><button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button></td>
+                <td>
+                  {(row.mapPin && (row.mapPin.x !== 50 || row.mapPin.y !== 50))
+                    ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📌 נעוץ</span>
+                    : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button>}
+                </td>
               </tr>
             ))}
           </tbody>

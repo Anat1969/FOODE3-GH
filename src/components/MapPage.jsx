@@ -17,26 +17,38 @@ function lngLatToPct(lng, lat) {
   return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
 }
 
-function createMarkerEl(name, color, isSelected) {
+function isPinned(mapPin) {
+  return mapPin && (mapPin.x !== 50 || mapPin.y !== 50);
+}
+
+function createMarkerEl(name, color, isSelected, pinned) {
   const wrapper = document.createElement('div');
   wrapper.className = 'map-marker-wrapper';
 
-  const dot = document.createElement('div');
-  dot.className = 'map-marker-dot';
-  dot.style.background = color;
-  dot.style.width = isSelected ? '20px' : '16px';
-  dot.style.height = isSelected ? '20px' : '16px';
-  dot.style.borderRadius = '50%';
-  dot.style.border = '2px solid white';
-  dot.style.cursor = 'pointer';
-  dot.style.transition = 'all 0.2s';
-  dot.style.boxShadow = isSelected ? `0 0 12px ${color}` : '0 2px 6px rgba(0,0,0,0.5)';
+  if (pinned) {
+    const pin = document.createElement('div');
+    pin.className = `map-marker-pin${isSelected ? ' selected' : ''}`;
+    pin.style.setProperty('--pin-color', color);
+    pin.innerHTML = `<svg width="28" height="36" viewBox="0 0 28 36"><path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.27 21.73 0 14 0z" fill="${color}"/><circle cx="14" cy="14" r="6" fill="white"/></svg>`;
+    wrapper.appendChild(pin);
+  } else {
+    const dot = document.createElement('div');
+    dot.className = 'map-marker-dot';
+    dot.style.background = color;
+    dot.style.width = isSelected ? '20px' : '16px';
+    dot.style.height = isSelected ? '20px' : '16px';
+    dot.style.borderRadius = '50%';
+    dot.style.border = '2px solid white';
+    dot.style.cursor = 'pointer';
+    dot.style.transition = 'all 0.2s';
+    dot.style.boxShadow = isSelected ? `0 0 12px ${color}` : '0 2px 6px rgba(0,0,0,0.5)';
+    wrapper.appendChild(dot);
+  }
 
   const label = document.createElement('div');
   label.className = 'map-marker-label';
   label.textContent = name;
 
-  wrapper.appendChild(dot);
   wrapper.appendChild(label);
   return wrapper;
 }
@@ -68,6 +80,12 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
 
   useEffect(() => {
     if (!mapRef.current) return;
+    const container = mapRef.current.getContainer();
+    if (pinningId) {
+      container.classList.add('pinning-mode');
+    } else {
+      container.classList.remove('pinning-mode');
+    }
     const handler = (e) => {
       if (!pinningRef.current) return;
       const pct = lngLatToPct(e.lngLat.lng, e.lngLat.lat);
@@ -76,7 +94,10 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     };
     mapRef.current.on('click', handler);
     mapRef.current.getCanvas().style.cursor = pinningId ? 'crosshair' : '';
-    return () => mapRef.current?.off('click', handler);
+    return () => {
+      mapRef.current?.off('click', handler);
+      container.classList.remove('pinning-mode');
+    };
   }, [pinningId, update, setPinningId]);
 
   useEffect(() => {
@@ -87,17 +108,20 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       const color = STATUS_COLORS[statusColor(p.approval)] || STATUS_COLORS.orange;
       const isSelected = selectedId === p.id;
 
+      const pinned = isPinned(p.mapPin);
       if (markersRef.current[p.id]) {
         markersRef.current[p.id].marker.setLngLat([lng, lat]);
         const oldEl = markersRef.current[p.id].el;
-        const newEl = createMarkerEl(p.positionName, color, isSelected);
-        newEl.querySelector('.map-marker-dot').addEventListener('click', (e) => { e.stopPropagation(); setSelectedId(p.id); });
+        const newEl = createMarkerEl(p.positionName, color, isSelected, pinned);
+        const clickTarget = newEl.querySelector('.map-marker-pin') || newEl.querySelector('.map-marker-dot');
+        clickTarget.addEventListener('click', (e) => { e.stopPropagation(); setSelectedId(p.id); });
         oldEl.replaceWith(newEl);
         markersRef.current[p.id].el = newEl;
         existing.delete(p.id);
       } else {
-        const el = createMarkerEl(p.positionName, color, isSelected);
-        el.querySelector('.map-marker-dot').addEventListener('click', (e) => { e.stopPropagation(); setSelectedId(p.id); });
+        const el = createMarkerEl(p.positionName, color, isSelected, pinned);
+        const clickTarget = el.querySelector('.map-marker-pin') || el.querySelector('.map-marker-dot');
+        clickTarget.addEventListener('click', (e) => { e.stopPropagation(); setSelectedId(p.id); });
         const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(mapRef.current);
         markersRef.current[p.id] = { marker, el };
       }

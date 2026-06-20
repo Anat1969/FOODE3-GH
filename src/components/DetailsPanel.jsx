@@ -90,7 +90,10 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
         selected.notes && <div className="field"><span>הערות</span><p className="view-notes">{selected.notes}</p></div>
       )}
 
-      <div className="pin-readout">מיקום: {selected.mapPin?.x ?? 0}% / {selected.mapPin?.y ?? 0}%</div>
+      <div className="pin-readout">
+        מיקום: {selected.mapPin?.x ?? 0}% / {selected.mapPin?.y ?? 0}%
+        {selected.mapPin && (selected.mapPin.x !== 50 || selected.mapPin.y !== 50) && <span className="pinned-badge inline">📌 נעוץ</span>}
+      </div>
 
       <div className="actions stacked">
         <button className="primary" onClick={() => goPin(selected.id)}>📍 דקירה על המפה</button>
