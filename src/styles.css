@@ -676,8 +676,9 @@ button {
   align-items: center;
   pointer-events: auto;
 }
-.pinning-mode .map-marker-wrapper {
-  pointer-events: none;
+.map-pin-btn {
+  margin-top: 10px;
+  width: 100%;
 }
 .map-marker-pin {
   cursor: pointer;

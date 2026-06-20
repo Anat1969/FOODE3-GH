@@ -100,23 +100,32 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
 
   useEffect(() => {
     if (!mapRef.current) return;
-    const container = mapRef.current.getContainer();
-    if (pinningId) {
-      container.classList.add('pinning-mode');
-    } else {
-      container.classList.remove('pinning-mode');
+    const map = mapRef.current;
+    const canvas = map.getCanvas();
+
+    if (!pinningId) {
+      canvas.style.cursor = '';
+      return;
     }
-    const handler = (e) => {
-      if (!pinningRef.current) return;
-      const pct = lngLatToPct(e.lngLat.lng, e.lngLat.lat);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;cursor:crosshair;';
+    map.getCanvasContainer().appendChild(overlay);
+
+    const handleClick = (e) => {
+      const rect = map.getCanvas().getBoundingClientRect();
+      const point = [e.clientX - rect.left, e.clientY - rect.top];
+      const lngLat = map.unproject(point);
+      const pct = lngLatToPct(lngLat.lng, lngLat.lat);
       update(pinningRef.current, { mapPin: pct });
       setPinningId(null);
     };
-    mapRef.current.on('click', handler);
-    mapRef.current.getCanvas().style.cursor = pinningId ? 'crosshair' : '';
+    overlay.addEventListener('click', handleClick);
+
     return () => {
-      mapRef.current?.off('click', handler);
-      container.classList.remove('pinning-mode');
+      overlay.removeEventListener('click', handleClick);
+      overlay.remove();
+      canvas.style.cursor = '';
     };
   }, [pinningId, update, setPinningId]);
 
@@ -176,6 +185,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
               <span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span>
             </div>
             <p className="map-info-coords">מיקום: {selected.mapPin?.x ?? 0}% / {selected.mapPin?.y ?? 0}%</p>
+            <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>📍 דקירה על המפה</button>
           </div>
         )}
       </div>
