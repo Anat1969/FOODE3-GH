@@ -40,17 +40,6 @@ function createMarkerEl(name, color, isSelected, pinned) {
   return wrapper;
 }
 
-function buildGrid() {
-  const lines = [];
-  for (let lng = 34.60; lng <= 34.70; lng += 0.005) {
-    lines.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[lng, 31.76], [lng, 31.84]] } });
-  }
-  for (let lat = 31.76; lat <= 31.84; lat += 0.005) {
-    lines.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[34.60, lat], [34.70, lat]] } });
-  }
-  return { type: 'FeatureCollection', features: lines };
-}
-
 export default function MapPage({ positions, update, selectedId, setSelectedId, pinningId, setPinningId }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -81,11 +70,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       bearing: 0,
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-left');
-    map.on('load', () => {
-      map.addSource('grid', { type: 'geojson', data: buildGrid() });
-      map.addLayer({ id: 'grid-lines', type: 'line', source: 'grid', paint: { 'line-color': 'rgba(255,255,255,0.25)', 'line-width': 1 } });
-      setMapReady(true);
-    });
+    map.on('load', () => setMapReady(true));
     mapRef.current = map;
     return () => map.remove();
   }, []);
@@ -110,7 +95,15 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
 
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
-    const existing = new Set(Object.keys(markersRef.current));
+    const current = new Set(positions.map(p => p.id));
+
+    Object.keys(markersRef.current).forEach(id => {
+      if (!current.has(id)) {
+        markersRef.current[id].marker.remove();
+        delete markersRef.current[id];
+      }
+    });
+
     positions.forEach(p => {
       const lng = p.mapPin?.x ?? ASHDOD_CENTER[0];
       const lat = p.mapPin?.y ?? ASHDOD_CENTER[1];
@@ -118,26 +111,22 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       const isSelected = selectedId === p.id;
       const pinned = isPinned(p.mapPin);
 
-      if (markersRef.current[p.id]) {
-        markersRef.current[p.id].marker.setLngLat([lng, lat]);
-        const oldEl = markersRef.current[p.id].el;
-        const newEl = createMarkerEl(p.positionName, color, isSelected, pinned);
-        const clickTarget = newEl.querySelector('.map-marker-pin') || newEl.querySelector('.map-marker-dot');
-        clickTarget.addEventListener('click', (ev) => { ev.stopPropagation(); setSelectedId(p.id); });
-        oldEl.replaceWith(newEl);
-        markersRef.current[p.id].el = newEl;
-      } else {
-        const el = createMarkerEl(p.positionName, color, isSelected, pinned);
-        const clickTarget = el.querySelector('.map-marker-pin') || el.querySelector('.map-marker-dot');
-        clickTarget.addEventListener('click', (ev) => { ev.stopPropagation(); setSelectedId(p.id); });
-        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(mapRef.current);
-        markersRef.current[p.id] = { marker, el };
+      const key = `${p.positionName}|${color}|${isSelected}|${pinned}|${lng}|${lat}`;
+      const existing = markersRef.current[p.id];
+
+      if (existing && existing.key === key) return;
+
+      if (existing) {
+        existing.marker.remove();
       }
-      existing.delete(p.id);
-    });
-    existing.forEach(id => {
-      markersRef.current[id]?.marker.remove();
-      delete markersRef.current[id];
+
+      const el = createMarkerEl(p.positionName, color, isSelected, pinned);
+      const clickTarget = el.querySelector('.map-marker-pin') || el.querySelector('.map-marker-dot');
+      clickTarget.addEventListener('click', (ev) => { ev.stopPropagation(); setSelectedId(p.id); });
+      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+      markersRef.current[p.id] = { marker, key };
     });
   }, [positions, selectedId, mapReady, setSelectedId]);
 
