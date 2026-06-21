@@ -91,8 +91,9 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
       )}
 
       <div className="pin-readout">
-        מיקום: {selected.mapPin?.x ?? 0}% / {selected.mapPin?.y ?? 0}%
-        {selected.mapPin && (selected.mapPin.x !== 50 || selected.mapPin.y !== 50) && <span className="pinned-badge inline">📌 נעוץ</span>}
+        {selected.mapPin && (Math.abs(selected.mapPin.x - 34.6415) > 0.0001 || Math.abs(selected.mapPin.y - 31.8014) > 0.0001)
+          ? <span className="pinned-badge inline">📌 נעוץ על המפה</span>
+          : <span className="muted">לא נדקר על המפה</span>}
       </div>
 
       <div className="actions stacked">

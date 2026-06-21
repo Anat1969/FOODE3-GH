@@ -5,20 +5,9 @@ import maplibregl from 'maplibre-gl';
 const ASHDOD_CENTER = [34.6415, 31.8014];
 const STATUS_COLORS = { green: '#34a853', orange: '#fbbc04', red: '#ea4335' };
 
-function pctToLngLat(x, y) {
-  const lng = ASHDOD_CENTER[0] + (x - 50) * 0.004;
-  const lat = ASHDOD_CENTER[1] + (50 - y) * 0.003;
-  return [lng, lat];
-}
-
-function lngLatToPct(lng, lat) {
-  const x = Math.round(((lng - ASHDOD_CENTER[0]) / 0.004) + 50);
-  const y = Math.round(50 - ((lat - ASHDOD_CENTER[1]) / 0.003));
-  return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
-}
-
 function isPinned(mapPin) {
-  return mapPin && (mapPin.x !== 50 || mapPin.y !== 50);
+  if (!mapPin) return false;
+  return Math.abs(mapPin.x - ASHDOD_CENTER[0]) > 0.0001 || Math.abs(mapPin.y - ASHDOD_CENTER[1]) > 0.0001;
 }
 
 function createMarkerEl(name, color, isSelected, pinned) {
@@ -113,11 +102,10 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     map.getCanvasContainer().appendChild(overlay);
 
     const handleClick = (e) => {
-      const rect = map.getCanvas().getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
       const point = [e.clientX - rect.left, e.clientY - rect.top];
       const lngLat = map.unproject(point);
-      const pct = lngLatToPct(lngLat.lng, lngLat.lat);
-      update(pinningRef.current, { mapPin: pct });
+      update(pinningRef.current, { mapPin: { x: lngLat.lng, y: lngLat.lat } });
       setPinningId(null);
     };
     overlay.addEventListener('click', handleClick);
@@ -133,11 +121,12 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     if (!mapRef.current || !mapReady) return;
     const existing = new Set(Object.keys(markersRef.current));
     positions.forEach(p => {
-      const [lng, lat] = pctToLngLat(p.mapPin?.x ?? 50, p.mapPin?.y ?? 50);
+      const lng = p.mapPin?.x ?? ASHDOD_CENTER[0];
+      const lat = p.mapPin?.y ?? ASHDOD_CENTER[1];
       const color = STATUS_COLORS[statusColor(p.approval)] || STATUS_COLORS.orange;
       const isSelected = selectedId === p.id;
-
       const pinned = isPinned(p.mapPin);
+
       if (markersRef.current[p.id]) {
         markersRef.current[p.id].marker.setLngLat([lng, lat]);
         const oldEl = markersRef.current[p.id].el;
@@ -184,7 +173,6 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
             <div className="map-info-status">
               <span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span>
             </div>
-            <p className="map-info-coords">מיקום: {selected.mapPin?.x ?? 0}% / {selected.mapPin?.y ?? 0}%</p>
             <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>📍 דקירה על המפה</button>
           </div>
         )}

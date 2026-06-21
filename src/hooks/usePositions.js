@@ -127,7 +127,7 @@ export default function usePositions() {
       approval: 'בבדיקה',
       status: 'בבדיקה',
       notes: '',
-      mapPin: { x: 50, y: 50 },
+      mapPin: { x: 34.6415, y: 31.8014 },
       foodTruckImageUrl: '',
       foodTruckImageAlt: '',
     };
