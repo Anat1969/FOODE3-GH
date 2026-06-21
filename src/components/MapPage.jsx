@@ -46,6 +46,9 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
   const markersRef = useRef({});
   const [mapReady, setMapReady] = useState(false);
   const [cursorCoord, setCursorCoord] = useState(null);
+  const pinningRef = useRef(pinningId);
+
+  useEffect(() => { pinningRef.current = pinningId; }, [pinningId]);
 
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
@@ -75,24 +78,51 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     return () => map.remove();
   }, []);
 
-  const handleOverlayClick = useCallback((e) => {
-    const map = mapRef.current;
-    if (!map || !pinningId) return;
-    const rect = mapContainer.current.getBoundingClientRect();
-    const lngLat = map.unproject([e.clientX - rect.left, e.clientY - rect.top]);
-    update(pinningId, { mapPin: { x: lngLat.lng, y: lngLat.lat } });
-    setPinningId(null);
-    setCursorCoord(null);
-  }, [pinningId, update, setPinningId]);
-
-  const handleOverlayMove = useCallback((e) => {
+  // Pinning: use map's native click + disable marker pointer-events
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const rect = mapContainer.current.getBoundingClientRect();
-    const lngLat = map.unproject([e.clientX - rect.left, e.clientY - rect.top]);
-    setCursorCoord({ lng: lngLat.lng.toFixed(5), lat: lngLat.lat.toFixed(5), px: e.clientX - rect.left, py: e.clientY - rect.top });
-  }, []);
 
+    if (!pinningId) {
+      map.getCanvas().style.cursor = '';
+      Object.values(markersRef.current).forEach(({ marker }) => {
+        marker.getElement().style.pointerEvents = '';
+      });
+      return;
+    }
+
+    map.getCanvas().style.cursor = 'crosshair';
+    Object.values(markersRef.current).forEach(({ marker }) => {
+      marker.getElement().style.pointerEvents = 'none';
+    });
+
+    const clickHandler = (e) => {
+      update(pinningRef.current, { mapPin: { x: e.lngLat.lng, y: e.lngLat.lat } });
+      setPinningId(null);
+      setCursorCoord(null);
+    };
+
+    const moveHandler = (e) => {
+      const rect = map.getCanvas().getBoundingClientRect();
+      setCursorCoord({
+        lng: e.lngLat.lng.toFixed(5),
+        lat: e.lngLat.lat.toFixed(5),
+        px: e.point.x,
+        py: e.point.y,
+      });
+    };
+
+    map.on('click', clickHandler);
+    map.on('mousemove', moveHandler);
+
+    return () => {
+      map.off('click', clickHandler);
+      map.off('mousemove', moveHandler);
+      map.getCanvas().style.cursor = '';
+    };
+  }, [pinningId, update, setPinningId]);
+
+  // Markers
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
     const current = new Set(positions.map(p => p.id));
@@ -123,6 +153,11 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       const el = createMarkerEl(p.positionName, color, isSelected, pinned);
       const clickTarget = el.querySelector('.map-marker-pin') || el.querySelector('.map-marker-dot');
       clickTarget.addEventListener('click', (ev) => { ev.stopPropagation(); setSelectedId(p.id); });
+
+      if (pinningRef.current) {
+        el.style.pointerEvents = 'none';
+      }
+
       const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
@@ -147,22 +182,13 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       <div className="map-layout">
         <div className="map-container-wrap">
           <div ref={mapContainer} className="map-3d-container" />
-          {pinningId && (
-            <div
-              className="pinning-overlay"
-              onClick={handleOverlayClick}
-              onMouseMove={handleOverlayMove}
-              onMouseLeave={() => setCursorCoord(null)}
-            >
-              {cursorCoord && (
-                <>
-                  <div className="crosshair-v" style={{ left: cursorCoord.px }} />
-                  <div className="crosshair-h" style={{ top: cursorCoord.py }} />
-                  <div className="coord-tooltip" style={{ left: cursorCoord.px + 14, top: cursorCoord.py - 30 }}>
-                    {cursorCoord.lng}, {cursorCoord.lat}
-                  </div>
-                </>
-              )}
+          {pinningId && cursorCoord && (
+            <div className="crosshair-layer">
+              <div className="crosshair-v" style={{ left: cursorCoord.px }} />
+              <div className="crosshair-h" style={{ top: cursorCoord.py }} />
+              <div className="coord-tooltip" style={{ left: cursorCoord.px + 14, top: cursorCoord.py - 30 }}>
+                {cursorCoord.lng}, {cursorCoord.lat}
+              </div>
             </div>
           )}
         </div>
