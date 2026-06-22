@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Chip from './Chip.jsx';
 
 const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
+const buildingOptions = ['אין מבנה', 'יש מבנה', 'מבנה לא מקובל', 'מבנה מקובל'];
+const envOptions = ['מקובל', 'טעון שיפור', 'אזהרה'];
 
 function CheckMark({ value, onChange, editMode }) {
   const isGood = value === 'טוב';
@@ -30,6 +32,8 @@ const VALUE_RANK = {
   'טוב': 0, 'לא טוב': 1,
   'יש': 0, 'אין': 1,
   'מקובלת': 0, 'בבדיקה': 1, 'לא מקובלת': 2,
+  'מבנה מקובל': 0, 'יש מבנה': 1, 'מבנה לא מקובל': 2, 'אין מבנה': 3,
+  'מקובל': 0, 'טעון שיפור': 1, 'אזהרה': 2,
 };
 
 function compareValues(a, b) {
@@ -43,26 +47,54 @@ function compareValues(a, b) {
 }
 
 const COLUMNS = [
-  { key: 'number', label: 'מספר' },
-  { key: 'foodTruckImageUrl', label: 'תמונה', sortable: false },
-  { key: 'positionName', label: 'שם עמדה' },
-  { key: 'approval', label: 'האם מקובלת' },
-  { key: 'complexName', label: 'שם מתחם' },
-  { key: 'businessName', label: 'שם עסק' },
-  { key: 'water', label: 'מים' },
-  { key: 'electricity', label: 'חשמל' },
-  { key: 'sewage', label: 'ביוב' },
-  { key: 'buildingQuality', label: 'איכות מבנה' },
-  { key: 'environmentQuality', label: 'איכות הסביבה' },
-  { key: 'notes', label: 'הערות' },
-  { key: '_pin', label: 'מפה', sortable: false },
+  { key: 'number', label: 'מספר', group: 'זיהוי' },
+  { key: 'foodTruckImageUrl', label: 'תמונה', sortable: false, group: 'זיהוי' },
+  { key: '_pin', label: 'מפה', sortable: false, group: 'זיהוי' },
+  { key: 'positionName', label: 'שם עמדה', group: 'זיהוי' },
+  { key: 'complexName', label: 'שם מתחם', group: 'זיהוי' },
+  { key: 'businessName', label: 'שם עסק', group: 'פרטי עסק' },
+  { key: 'ownerName', label: 'שם בעלים', group: 'פרטי עסק' },
+  { key: 'water', label: 'מים', group: 'תשתיות' },
+  { key: 'electricity', label: 'חשמל', group: 'תשתיות' },
+  { key: 'sewage', label: 'ביוב', group: 'תשתיות' },
+  { key: 'buildingQuality', label: 'עיצוב המבנה', group: 'איכות' },
+  { key: 'environmentQuality', label: 'איכות הסביבה', group: 'איכות' },
+  { key: 'approval', label: 'האם מקובלת', group: 'סטטוס' },
+  { key: 'notes', label: 'הערות', group: 'סטטוס' },
 ];
 
+function buildColGroups(columns) {
+  const groups = [];
+  let current = null;
+  for (const col of columns) {
+    if (current && current.name === col.group) {
+      current.span++;
+    } else {
+      current = { name: col.group, span: 1 };
+      groups.push(current);
+    }
+  }
+  return groups;
+}
+
+const COL_GROUPS = buildColGroups(COLUMNS);
+
 const FILTER_LABELS = { approved: 'מקובלות', pending: 'בבדיקה', rejected: 'לא מקובלות', all: 'כל העמדות' };
+
+const SEARCH_HISTORY_KEY = 'foode3-search-history';
+function loadSearchHistory() {
+  try { return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); } catch { return []; }
+}
+function saveSearchHistory(list) {
+  localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(list.slice(0, 10)));
+}
 
 export default function PositionsTable({ positions, allPositions, update, add, remove, selectedId, setSelectedId, setPage, setPinningId, editMode, statsFilter, onClearFilter }) {
   const [sortCol, setSortCol] = useState('approval');
   const [sortAsc, setSortAsc] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchHistory, setSearchHistory] = useState(loadSearchHistory);
   const goPin = (id) => { setSelectedId(id); setPinningId(id); setPage('map'); };
 
   const handleSort = (key) => {
@@ -74,7 +106,23 @@ export default function PositionsTable({ positions, allPositions, update, add, r
     }
   };
 
-  const sorted = [...positions].sort((a, b) => {
+  const commitSearch = (term) => {
+    if (!term.trim()) return;
+    const history = [term.trim(), ...searchHistory.filter(h => h !== term.trim())].slice(0, 10);
+    setSearchHistory(history);
+    saveSearchHistory(history);
+  };
+
+  const matchesSearch = (row) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.trim().toLowerCase();
+    const fields = [row.number, row.positionName, row.complexName, row.businessName, row.ownerName, row.water, row.electricity, row.sewage, row.buildingQuality, row.environmentQuality, row.approval, row.notes];
+    return fields.some(f => (f || '').toLowerCase().includes(term));
+  };
+
+  const filtered = positions.filter(matchesSearch);
+
+  const sorted = [...filtered].sort((a, b) => {
     const cmp = compareValues(a[sortCol], b[sortCol]);
     return sortAsc ? cmp : -cmp;
   });
@@ -94,16 +142,51 @@ export default function PositionsTable({ positions, allPositions, update, add, r
             </div>
           )}
         </div>
-        {editMode && (
-          <div className="actions">
-            <button className="primary" onClick={() => setSelectedId(add())}>+ הוספת עמדה</button>
-            <button onClick={() => selectedId && remove(selectedId)}>מחיקה</button>
-          </div>
-        )}
+        <div className="actions">
+          <button className="search-toggle" onClick={() => setSearchOpen(!searchOpen)} title="חיפוש">
+            🔍 חיפוש
+          </button>
+          {editMode && (
+            <>
+              <button className="primary" onClick={() => setSelectedId(add())}>+ הוספת עמדה</button>
+              <button onClick={() => selectedId && remove(selectedId)}>מחיקה</button>
+            </>
+          )}
+        </div>
       </div>
+
+      {searchOpen && (
+        <div className="table-search-bar">
+          <input
+            className="table-search-input"
+            placeholder="חיפוש לפי מילת מפתח..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && commitSearch(searchTerm)}
+            autoFocus
+          />
+          {searchTerm && (
+            <span className="table-search-count">{filtered.length} תוצאות</span>
+          )}
+          <button className="ghost" onClick={() => { setSearchOpen(false); setSearchTerm(''); }}>✕</button>
+          {searchHistory.length > 0 && !searchTerm && (
+            <div className="search-history">
+              {searchHistory.map((h, i) => (
+                <button key={i} className="search-history-item" onClick={() => setSearchTerm(h)}>{h}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="table-wrap">
         <table>
           <thead>
+            <tr className="col-group-row">
+              {COL_GROUPS.map((g, i) => (
+                <th key={i} colSpan={g.span} className="col-group-header">{g.name}</th>
+              ))}
+            </tr>
             <tr>
               {COLUMNS.map(col => (
                 <th
@@ -122,7 +205,28 @@ export default function PositionsTable({ positions, allPositions, update, add, r
               <tr key={row.id} className={`${selectedId === row.id ? 'selected' : ''} approval-${approvalClass(row.approval)}`} onClick={() => setSelectedId(row.id)}>
                 <td>{row.number}</td>
                 <td>{row.foodTruckImageUrl ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb empty">—</span>}</td>
+                <td>
+                  {(row.mapPin && (Math.abs(row.mapPin.x - 34.6415) > 0.0001 || Math.abs(row.mapPin.y - 31.8014) > 0.0001))
+                    ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📌 נעוץ</span>
+                    : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button>}
+                </td>
                 <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
+                <td>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>
+                <td>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>
+                <td>{editMode ? <input value={row.ownerName || ''} onChange={e => update(row.id, { ownerName: e.target.value })} /> : row.ownerName || '—'}</td>
+                <td><CheckMark value={row.water} editMode={editMode} onChange={v => update(row.id, { water: v })} /></td>
+                <td><CheckMark value={row.electricity} editMode={editMode} onChange={v => update(row.id, { electricity: v })} /></td>
+                <td><CheckMark value={row.sewage} editMode={editMode} onChange={v => update(row.id, { sewage: v })} /></td>
+                <td>
+                  {editMode
+                    ? <InlineSelect value={row.buildingQuality} options={buildingOptions} onChange={v => update(row.id, { buildingQuality: v })} />
+                    : <Chip value={row.buildingQuality} />}
+                </td>
+                <td>
+                  {editMode
+                    ? <InlineSelect value={row.environmentQuality} options={envOptions} onChange={v => update(row.id, { environmentQuality: v })} />
+                    : <Chip value={row.environmentQuality} />}
+                </td>
                 <td>
                   {editMode ? (
                     <InlineSelect value={row.approval} options={approvalOptions} type="status" onChange={v => update(row.id, { approval: v, status: v })} />
@@ -130,25 +234,13 @@ export default function PositionsTable({ positions, allPositions, update, add, r
                     <span className={`approval-light ${approvalClass(row.approval)}`}>{row.approval}</span>
                   )}
                 </td>
-                <td>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>
-                <td>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>
-                <td><CheckMark value={row.water} editMode={editMode} onChange={v => update(row.id, { water: v })} /></td>
-                <td><CheckMark value={row.electricity} editMode={editMode} onChange={v => update(row.id, { electricity: v })} /></td>
-                <td><CheckMark value={row.sewage} editMode={editMode} onChange={v => update(row.id, { sewage: v })} /></td>
-                <td><Chip value={row.buildingQuality} /></td>
-                <td><Chip value={row.environmentQuality} /></td>
                 <td>{editMode ? <input value={row.notes || ''} onChange={e => update(row.id, { notes: e.target.value })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>
-                <td>
-                  {(row.mapPin && (Math.abs(row.mapPin.x - 34.6415) > 0.0001 || Math.abs(row.mapPin.y - 31.8014) > 0.0001))
-                    ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📌 נעוץ</span>
-                    : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button>}
-                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="pagination"><span>{positions.length} עמדות</span></div>
+      <div className="pagination"><span>{filtered.length} עמדות</span></div>
     </section>
   );
 }
