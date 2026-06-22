@@ -168,7 +168,6 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
   return (
     <section className="map-page glass-panel">
       <div className="map-header">
-        <h2>מפת עמדות – אשדוד</h2>
         {pinningId && (
           <div className="pinning-banner">
             מסמנים את <strong>{pinningName}</strong> – לחצי על המפה למיקום הפודטראק
