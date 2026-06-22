@@ -1046,7 +1046,6 @@ function HighlightText({ text, search }) {
 export default function PolicyViewer({ onClose }) {
   const [activeChapter, setActiveChapter] = useState('ch1');
   const [search, setSearch] = useState('');
-  const [expandedChapters, setExpandedChapters] = useState({});
   const contentRef = useRef(null);
 
   const searchResults = useMemo(() => {
@@ -1078,10 +1077,6 @@ export default function PolicyViewer({ onClose }) {
     }
   };
 
-  const toggleChapter = (id) => {
-    setExpandedChapters(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
   return (
     <div className="policy-overlay" onClick={onClose}>
       <div className="policy-modal glass-panel" onClick={e => e.stopPropagation()}>
@@ -1105,34 +1100,40 @@ export default function PolicyViewer({ onClose }) {
 
         <div className="policy-body">
           <aside className="policy-legend">
-            <h3>מקרא – ראשי פרקים</h3>
-            {POLICY_SECTIONS.map(ch => (
-              <div key={ch.id} className="legend-chapter">
-                <button
-                  className={`legend-chapter-btn ${activeChapter === ch.id ? 'active' : ''}`}
-                  onClick={() => scrollToChapter(ch.id)}
-                >
-                  <span className="legend-color" style={{ background: ch.color }} />
-                  <span className="legend-num">פרק {ch.num}</span>
-                  <span className="legend-title">{ch.title}</span>
-                </button>
-                <button className="legend-expand" onClick={(e) => { e.stopPropagation(); toggleChapter(ch.id); }}>
-                  {expandedChapters[ch.id] ? '▾' : '◂'}
-                </button>
-                {expandedChapters[ch.id] && (
-                  <div className="legend-subsections">
-                    {ch.paragraphs.filter(p => p.bold).slice(0, 12).map((p, i) => {
-                      const preview = p.text.length > 50 ? p.text.slice(0, 50) + '...' : p.text;
-                      return (
-                        <button key={i} className="legend-sub-btn" onClick={() => scrollToResult(ch.id, ch.paragraphs.indexOf(p))}>
-                          {preview}
-                        </button>
-                      );
-                    })}
+            <h3>תוכן עניינים</h3>
+            <nav className="toc">
+              {POLICY_SECTIONS.map(ch => {
+                const subs = ch.paragraphs
+                  .map((p, i) => ({ ...p, idx: i }))
+                  .filter(p => p.bold && p.text.length > 8 && p.text.length < 80);
+                return (
+                  <div key={ch.id} className="toc-chapter">
+                    <button
+                      className={`toc-chapter-btn ${activeChapter === ch.id ? 'active' : ''}`}
+                      onClick={() => scrollToChapter(ch.id)}
+                    >
+                      <span className="toc-dot" style={{ background: ch.color }} />
+                      <span className="toc-num">{ch.num}.</span>
+                      <span className="toc-title">{ch.title}</span>
+                    </button>
+                    {subs.length > 0 && (
+                      <div className="toc-subs">
+                        {subs.slice(0, 8).map((p, si) => {
+                          const label = p.text.replace(/[:–\-]$/, '').trim();
+                          const short = label.length > 45 ? label.slice(0, 45) + '…' : label;
+                          return (
+                            <button key={si} className="toc-sub-btn" onClick={() => scrollToResult(ch.id, p.idx)}>
+                              <span className="toc-sub-num">{ch.num}.{si + 1}</span>
+                              <span className="toc-sub-title">{short}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </nav>
 
             {search && searchResults && searchResults.length > 0 && (
               <div className="search-results-legend">
