@@ -25,6 +25,7 @@ function toRow(p) {
     map_pin_y: p.mapPin?.y ?? p.map_pin_y ?? 50,
     food_truck_image_url: p.foodTruckImageUrl ?? p.food_truck_image_url ?? '',
     food_truck_image_alt: p.foodTruckImageAlt ?? p.food_truck_image_alt ?? '',
+    owner_name: p.ownerName ?? p.owner_name ?? '',
   };
 }
 
@@ -51,6 +52,7 @@ function fromRow(r) {
     mapPin: { x: r.map_pin_x, y: r.map_pin_y },
     foodTruckImageUrl: r.food_truck_image_url,
     foodTruckImageAlt: r.food_truck_image_alt,
+    ownerName: r.owner_name || '',
   };
 }
 
@@ -102,6 +104,7 @@ export default function usePositions() {
     if ('notes' in changes) dbChanges.notes = changes.notes;
     if ('foodTruckImageUrl' in changes) dbChanges.food_truck_image_url = changes.foodTruckImageUrl;
     if ('foodTruckImageAlt' in changes) dbChanges.food_truck_image_alt = changes.foodTruckImageAlt;
+    if ('ownerName' in changes) dbChanges.owner_name = changes.ownerName;
     if ('mapPin' in changes) {
       dbChanges.map_pin_x = changes.mapPin.x;
       dbChanges.map_pin_y = changes.mapPin.y;
@@ -122,8 +125,9 @@ export default function usePositions() {
       water: 'טוב',
       electricity: 'טוב',
       sewage: 'טוב',
-      buildingQuality: 'טוב',
-      environmentQuality: 'טוב',
+      ownerName: '',
+      buildingQuality: 'אין מבנה',
+      environmentQuality: 'מקובל',
       approval: 'בבדיקה',
       status: 'בבדיקה',
       notes: '',

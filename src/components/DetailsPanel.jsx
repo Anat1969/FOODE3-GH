@@ -1,6 +1,7 @@
 import ImageUpload from './ImageUpload.jsx';
 
-const qualityOptions = ['טוב', 'לא טוב'];
+const buildingOptions = ['אין מבנה', 'יש מבנה', 'מבנה לא מקובל', 'מבנה מקובל'];
+const envOptions = ['מקובל', 'טעון שיפור', 'אזהרה'];
 const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
 
 function Field({ label, children }) {
@@ -27,6 +28,13 @@ function CheckField({ label, value, onChange, editMode }) {
   );
 }
 
+function chipClass(value) {
+  if (['מבנה מקובל', 'מקובל'].includes(value)) return 'green';
+  if (['יש מבנה', 'טעון שיפור'].includes(value)) return 'orange';
+  if (['מבנה לא מקובל', 'אזהרה'].includes(value)) return 'red';
+  return 'gray';
+}
+
 export default function DetailsPanel({ selected, update, remove, duplicate, goPin, onClose, editMode }) {
   if (!selected) return <aside className="details glass-panel"><h2>פרטי עמדה</h2><p className="muted">בחרי עמדה לצפייה.</p></aside>;
   const set = (key, value) => update(selected.id, { [key]: value });
@@ -50,6 +58,7 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
           <Field label="שם עמדה"><input value={selected.positionName} onChange={e => set('positionName', e.target.value)} /></Field>
           <Field label="שם מתחם"><input value={selected.complexName} onChange={e => set('complexName', e.target.value)} /></Field>
           <Field label="שם עסק"><input value={selected.businessName} onChange={e => set('businessName', e.target.value)} /></Field>
+          <Field label="שם בעלים"><input value={selected.ownerName || ''} onChange={e => set('ownerName', e.target.value)} /></Field>
         </>
       ) : (
         <div className="view-fields">
@@ -57,6 +66,7 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
           <div className="view-field"><span>שם עמדה</span><strong>{selected.positionName}</strong></div>
           <div className="view-field"><span>שם מתחם</span><strong>{selected.complexName}</strong></div>
           <div className="view-field"><span>שם עסק</span><strong>{selected.businessName}</strong></div>
+          <div className="view-field"><span>שם בעלים</span><strong>{selected.ownerName || '—'}</strong></div>
         </div>
       )}
 
@@ -68,13 +78,13 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
 
       {editMode ? (
         <div className="two-cols">
-          <Field label="מבנה"><select value={selected.buildingQuality} onChange={e => set('buildingQuality', e.target.value)}>{qualityOptions.map(o => <option key={o}>{o}</option>)}</select></Field>
-          <Field label="סביבה"><select value={selected.environmentQuality} onChange={e => set('environmentQuality', e.target.value)}>{qualityOptions.map(o => <option key={o}>{o}</option>)}</select></Field>
+          <Field label="עיצוב המבנה"><select value={selected.buildingQuality} onChange={e => set('buildingQuality', e.target.value)}>{buildingOptions.map(o => <option key={o}>{o}</option>)}</select></Field>
+          <Field label="איכות הסביבה"><select value={selected.environmentQuality} onChange={e => set('environmentQuality', e.target.value)}>{envOptions.map(o => <option key={o}>{o}</option>)}</select></Field>
         </div>
       ) : (
         <div className="two-cols">
-          <div className="field"><span>מבנה</span><span className={`check-mark-field-view ${selected.buildingQuality === 'טוב' ? 'good' : 'bad'}`}>{selected.buildingQuality}</span></div>
-          <div className="field"><span>סביבה</span><span className={`check-mark-field-view ${selected.environmentQuality === 'טוב' ? 'good' : 'bad'}`}>{selected.environmentQuality}</span></div>
+          <div className="field"><span>עיצוב המבנה</span><span className={`check-mark-field-view ${chipClass(selected.buildingQuality)}`}>{selected.buildingQuality}</span></div>
+          <div className="field"><span>איכות הסביבה</span><span className={`check-mark-field-view ${chipClass(selected.environmentQuality)}`}>{selected.environmentQuality}</span></div>
         </div>
       )}
 
