@@ -1,4 +1,4 @@
-export default function SettingsPage() {
+export default function SettingsPage({ theme, setTheme }) {
   return (
     <section className="settings-page glass-panel">
       <h2>הגדרות</h2>
@@ -15,6 +15,23 @@ export default function SettingsPage() {
           <span>שמירה אוטומטית</span>
           <select defaultValue="כן"><option>כן</option><option>לא</option></select>
         </label>
+        <div className="field">
+          <span>מצב תאורה</span>
+          <div className="theme-toggle">
+            <button
+              className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
+              onClick={() => setTheme('light')}
+            >
+              ☀️ בהיר
+            </button>
+            <button
+              className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
+              onClick={() => setTheme('dark')}
+            >
+              🌙 כהה
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );

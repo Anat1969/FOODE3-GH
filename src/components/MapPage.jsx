@@ -78,7 +78,6 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     return () => map.remove();
   }, []);
 
-  // Pinning: use map's native click + disable marker pointer-events
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -103,7 +102,6 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     };
 
     const moveHandler = (e) => {
-      const rect = map.getCanvas().getBoundingClientRect();
       setCursorCoord({
         lng: e.lngLat.lng.toFixed(5),
         lat: e.lngLat.lat.toFixed(5),
@@ -122,7 +120,6 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     };
   }, [pinningId, update, setPinningId]);
 
-  // Markers
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
     const current = new Set(positions.map(p => p.id));
@@ -194,6 +191,11 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
         </div>
         {selected && !pinningId && (
           <div className="map-info-card glass-panel">
+            {selected.foodTruckImageUrl && (
+              <div className="map-info-image">
+                <img src={selected.foodTruckImageUrl} alt={selected.foodTruckImageAlt || selected.positionName} />
+              </div>
+            )}
             <h3>{selected.positionName}</h3>
             <p>{selected.complexName} · {selected.businessName}</p>
             <div className="map-info-row">

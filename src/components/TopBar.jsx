@@ -1,8 +1,9 @@
-export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode }) {
+export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode, onShowPolicy }) {
   const tabs = [
     ['list', 'רשימת עמדות'],
     ['map', 'מפת עמדות'],
     ['reports', 'דוחות'],
+    ['links', 'קישורים'],
     ['settings', 'הגדרות']
   ];
   return (
@@ -23,9 +24,12 @@ export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode
             <button key={id} className={page === id ? 'active' : ''} onClick={() => setPage(id)}>{label}</button>
           ))}
         </nav>
-        <button className={`edit-toggle ${editMode ? 'active' : ''}`} onClick={() => setEditMode(!editMode)}>
-          {editMode ? '✏️ מצב עריכה' : '👁️ מצב תצוגה'}
-        </button>
+        <div className="tabs-actions">
+          <button className="policy-btn" onClick={onShowPolicy}>📜 מדיניות</button>
+          <button className={`edit-toggle ${editMode ? 'active' : ''}`} onClick={() => setEditMode(!editMode)}>
+            {editMode ? '✏️ מצב עריכה' : '👁️ מצב תצוגה'}
+          </button>
+        </div>
       </div>
     </header>
   );
