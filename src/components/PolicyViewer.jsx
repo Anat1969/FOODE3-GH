@@ -1155,15 +1155,16 @@ export default function PolicyViewer({ onClose }) {
                   <span className="chapter-num" style={{ background: ch.color }}>פרק {ch.num}</span>
                   <HighlightText text={ch.title} search={search} />
                 </h3>
-                {ch.paragraphs.map((p, pi) => (
-                  <p
-                    key={pi}
-                    id={`para-${ch.id}-${pi}`}
-                    className={`policy-para ${p.bold ? 'bold' : ''}`}
-                  >
-                    <HighlightText text={p.text} search={search} />
-                  </p>
-                ))}
+                {ch.paragraphs.map((p, pi) => {
+                  const isHeading = p.bold && p.text.length < 80;
+                  const isSub = p.bold && p.text.length >= 80;
+                  const cls = isHeading ? 'policy-para heading' : isSub ? 'policy-para sub-heading' : 'policy-para body';
+                  return (
+                    <p key={pi} id={`para-${ch.id}-${pi}`} className={cls}>
+                      <HighlightText text={p.text} search={search} />
+                    </p>
+                  );
+                })}
               </div>
             ))}
           </div>
