@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
 
 :root {
   --bg: #0f1923;
@@ -17,7 +18,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Heebo', sans-serif;
+  font-family: 'Calibri Light', 'Calibri', 'Rubik', 'Heebo', sans-serif;
+  font-weight: 300;
   background: var(--bg);
   color: var(--text);
   direction: rtl;
@@ -165,7 +167,7 @@ body {
 
 .list-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 340px 1fr;
   gap: 12px;
 }
 
@@ -272,6 +274,23 @@ td input:focus, td select:focus {
   white-space: nowrap;
 }
 .pin-button:hover { background: var(--surface-hover); }
+.pinned-badge {
+  background: rgba(52,168,83,0.15);
+  color: #34a853;
+  border: 1px solid rgba(52,168,83,0.3);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.pinned-badge:hover { background: rgba(52,168,83,0.25); }
+.pinned-badge.inline {
+  margin-inline-start: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+}
 
 .pagination {
   display: flex;
@@ -282,6 +301,41 @@ td input:focus, td select:focus {
   color: var(--text-muted);
 }
 .pagination strong { color: var(--blue); }
+
+/* Sortable Headers */
+thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+thead th.sortable:hover { color: var(--text); }
+.sort-arrow { font-size: 10px; opacity: 0.7; }
+
+/* Approval Traffic Light */
+.approval-light {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+.approval-light.green {
+  background: rgba(52,168,83,0.2);
+  color: var(--green);
+  box-shadow: inset 0 0 0 1px var(--green);
+}
+.approval-light.orange {
+  background: rgba(251,188,4,0.2);
+  color: var(--orange);
+  box-shadow: inset 0 0 0 1px var(--orange);
+}
+.approval-light.red {
+  background: rgba(234,67,53,0.2);
+  color: var(--red);
+  box-shadow: inset 0 0 0 1px var(--red);
+}
 
 /* Chip */
 .chip {
@@ -513,6 +567,349 @@ button {
 .settings-page { padding: 24px; }
 .settings-page h2 { margin-bottom: 16px; }
 .settings-grid { max-width: 500px; }
+
+/* Check Mark Buttons */
+.check-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 auto;
+}
+.check-mark.good {
+  background: rgba(52,168,83,0.2);
+  border-color: var(--green);
+  color: var(--green);
+}
+.check-mark.bad {
+  background: rgba(234,67,53,0.2);
+  border-color: var(--red);
+  color: var(--red);
+}
+.check-mark:hover { transform: scale(1.15); }
+
+.check-mark-field {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+}
+.check-mark-field.good {
+  background: rgba(52,168,83,0.15);
+  border-color: var(--green);
+  color: var(--green);
+}
+.check-mark-field.bad {
+  background: rgba(234,67,53,0.15);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.check-mark-small {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.check-mark-small.good { background: rgba(52,168,83,0.2); color: var(--green); }
+.check-mark-small.bad { background: rgba(234,67,53,0.2); color: var(--red); }
+
+.three-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 12px;
+  margin-bottom: 4px;
+}
+
+/* Map Layout */
+.map-header { margin-bottom: 12px; }
+.map-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 12px;
+}
+
+.map-info-card {
+  padding: 16px;
+  height: fit-content;
+}
+.map-info-card h3 { font-size: 16px; margin-bottom: 4px; }
+.map-info-card > p { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.map-info-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.map-info-status { margin-bottom: 8px; }
+.map-info-coords { font-size: 12px; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  .map-layout { grid-template-columns: 1fr; }
+}
+
+/* MapLibre container */
+.map-container-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.map-3d-container {
+  width: 100%;
+  height: 500px;
+}
+
+/* Pinning crosshair - visual only, no blocking */
+.crosshair-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.crosshair-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255,255,0,0.7);
+  pointer-events: none;
+}
+.crosshair-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,0,0.7);
+  pointer-events: none;
+}
+.coord-tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-size: 12px;
+  font-family: monospace;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  direction: ltr;
+}
+.pinning-cancel {
+  margin-inline-start: 12px;
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+/* Map Marker */
+.map-marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+.map-pin-btn {
+  margin-top: 10px;
+  width: 100%;
+}
+.map-marker-pin {
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  transition: transform 0.2s;
+}
+.map-marker-pin.selected {
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 8px var(--pin-color));
+}
+.map-marker-label {
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  font-size: 11px;
+  font-family: 'Heebo', sans-serif;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-top: 4px;
+  pointer-events: none;
+}
+
+/* Map Legend */
+.map-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  justify-content: center;
+}
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-inline-end: 6px;
+  vertical-align: middle;
+}
+
+/* Image Upload */
+.image-upload {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  outline: none;
+}
+.image-upload.drag-over {
+  outline: 2px dashed var(--blue);
+  outline-offset: -2px;
+}
+.image-dropzone {
+  height: 140px;
+  background: rgba(255,255,255,0.04);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.image-dropzone:hover { background: rgba(255,255,255,0.08); }
+.upload-icon { font-size: 32px; margin-bottom: 8px; }
+.image-dropzone p { font-size: 13px; color: var(--text-muted); }
+.image-preview { position: relative; }
+.image-preview img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 8px;
+}
+.image-preview:hover .image-overlay { opacity: 1; }
+.image-overlay button {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.image-overlay button:hover { background: rgba(255,255,255,0.3); }
+
+/* Check Mark View (read-only) */
+.check-mark-view {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+.check-mark-view.good { background: rgba(52,168,83,0.2); color: var(--green); }
+.check-mark-view.bad { background: rgba(234,67,53,0.2); color: var(--red); }
+
+/* Check Mark Field View (panel read-only) */
+.check-mark-field-view {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+.check-mark-field-view.good { background: rgba(52,168,83,0.15); color: var(--green); }
+.check-mark-field-view.bad { background: rgba(234,67,53,0.15); color: var(--red); }
+
+/* View Fields (panel read-only) */
+.view-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.view-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.view-field span { font-size: 12px; color: var(--text-muted); }
+.view-field strong { font-size: 15px; font-weight: 500; }
+
+.view-notes {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+td.col-name strong { font-weight: 600; font-size: 15px; }
+
+.notes-text {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
+/* Approval Row Coloring */
+tbody tr.approval-green { border-inline-start: 3px solid var(--green); }
+tbody tr.approval-orange { border-inline-start: 3px solid var(--orange); }
+tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
+
+/* Edit Mode Toggle */
+.tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.edit-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.edit-toggle:hover { background: var(--surface-hover); color: var(--text); }
+.edit-toggle.active {
+  background: rgba(66,133,244,0.15);
+  border-color: var(--blue);
+  color: var(--blue);
+}
 
 /* Loading */
 .loading-screen {
