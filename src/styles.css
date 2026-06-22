@@ -1402,7 +1402,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   padding: 16px;
   border-inline-start: 1px solid var(--border);
   overflow-y: auto;
-  order: 2;
+  order: 1;
 }
 .policy-legend h3 {
   font-size: 15px;
@@ -1537,7 +1537,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   flex: 1;
   padding: 28px 36px;
   overflow-y: auto;
-  order: 1;
+  order: 2;
 }
 
 .policy-chapter {
