@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Chip from './Chip.jsx';
+import { IMAGE_PLACEHOLDER } from './ImageUpload.jsx';
 
 const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
 
@@ -110,7 +111,7 @@ export default function PositionsTable({ positions, update, add, remove, selecte
             {sorted.map(row => (
               <tr key={row.id} className={`${selectedId === row.id ? 'selected' : ''} approval-${approvalClass(row.approval)}`} onClick={() => setSelectedId(row.id)}>
                 <td>{row.number}</td>
-                <td>{row.foodTruckImageUrl ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb empty">—</span>}</td>
+                <td><img className="thumb" src={row.foodTruckImageUrl || IMAGE_PLACEHOLDER} alt={row.foodTruckImageAlt || row.positionName} /></td>
                 <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
                 <td>
                   {editMode ? (

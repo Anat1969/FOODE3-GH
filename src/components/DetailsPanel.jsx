@@ -1,4 +1,4 @@
-import ImageUpload from './ImageUpload.jsx';
+import ImageUpload, { IMAGE_PLACEHOLDER } from './ImageUpload.jsx';
 
 const qualityOptions = ['טוב', 'לא טוב'];
 const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
@@ -39,7 +39,7 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
         <ImageUpload value={selected.foodTruckImageUrl} onChange={v => set('foodTruckImageUrl', v)} alt={selected.foodTruckImageAlt || selected.positionName} />
       ) : (
         <div className="foodtruck-photo-card">
-          {selected.foodTruckImageUrl ? <img src={selected.foodTruckImageUrl} alt={selected.foodTruckImageAlt || selected.positionName} /> : <div className="photo-placeholder">תמונת פודטראק</div>}
+          <img src={selected.foodTruckImageUrl || IMAGE_PLACEHOLDER} alt={selected.foodTruckImageAlt || selected.positionName} />
         </div>
       )}
 

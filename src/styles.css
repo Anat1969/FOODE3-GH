@@ -824,6 +824,64 @@ button {
 }
 .image-overlay button:hover { background: rgba(255,255,255,0.3); }
 
+.url-link {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 6px;
+  text-decoration: underline;
+}
+.url-link:hover { opacity: 0.8; }
+
+.image-url-input {
+  padding: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+}
+.image-url-input label {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+.image-url-input input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.image-url-input input:focus {
+  border-color: var(--blue);
+  outline: none;
+}
+.url-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+button.small {
+  padding: 5px 14px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+}
+button.primary.small {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
 /* Check Mark View (read-only) */
 .check-mark-view {
   width: 28px;
