@@ -1358,12 +1358,34 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 }
 .policy-close:hover { background: var(--surface-hover); }
 
+.policy-search-wrap {
+  position: relative;
+}
+
 .policy-search-bar {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 28px;
   border-bottom: 1px solid var(--border);
+}
+
+.search-results-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 28px;
+  right: 28px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  z-index: 20;
+  padding: 6px;
+}
+[data-theme="light"] .search-results-dropdown {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 .policy-search-input {
   flex: 1;
@@ -1509,18 +1531,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   word-break: break-word;
 }
 
-/* Search results in legend */
-.search-results-legend {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-.search-results-legend h4 {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--blue);
-  margin-bottom: 8px;
-}
+/* Search results dropdown */
 .search-result-btn {
   display: flex;
   flex-direction: column;
@@ -1531,16 +1542,15 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   border: none;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 11px;
-  padding: 6px 8px;
+  font-size: 12px;
+  padding: 8px 10px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
-  margin-bottom: 2px;
 }
-.search-result-btn:hover { background: var(--surface-hover); }
-.sr-chapter { font-size: 10px; color: var(--blue); font-weight: 500; }
-.sr-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-result-btn:hover { background: var(--surface-hover); color: var(--text); }
+.sr-chapter { font-size: 11px; color: var(--blue); font-weight: 600; }
+.sr-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 
 /* Policy Text Content */
 .policy-text {
