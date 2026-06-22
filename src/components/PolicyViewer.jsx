@@ -1085,16 +1085,28 @@ export default function PolicyViewer({ onClose }) {
           <button className="ghost policy-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="policy-search-bar">
-          <input
-            type="text"
-            placeholder="חיפוש במסמך המדיניות..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="policy-search-input"
-          />
-          {search && searchResults && (
-            <span className="search-count">{searchResults.length} תוצאות</span>
+        <div className="policy-search-wrap">
+          <div className="policy-search-bar">
+            <input
+              type="text"
+              placeholder="חיפוש במסמך המדיניות..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="policy-search-input"
+            />
+            {search && searchResults && (
+              <span className="search-count">{searchResults.length} תוצאות</span>
+            )}
+          </div>
+          {search && searchResults && searchResults.length > 0 && (
+            <div className="search-results-dropdown">
+              {searchResults.slice(0, 15).map((r, i) => (
+                <button key={i} className="search-result-btn" onClick={() => scrollToResult(r.chapterId, r.paraIndex)}>
+                  <span className="sr-chapter">{r.chapterTitle.slice(0, 30)}</span>
+                  <span className="sr-text">{r.text.slice(0, 80)}...</span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -1134,18 +1146,6 @@ export default function PolicyViewer({ onClose }) {
                 );
               })}
             </nav>
-
-            {search && searchResults && searchResults.length > 0 && (
-              <div className="search-results-legend">
-                <h4>תוצאות חיפוש</h4>
-                {searchResults.slice(0, 20).map((r, i) => (
-                  <button key={i} className="search-result-btn" onClick={() => scrollToResult(r.chapterId, r.paraIndex)}>
-                    <span className="sr-chapter">{r.chapterTitle.slice(0, 25)}</span>
-                    <span className="sr-text">{r.text.slice(0, 60)}...</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </aside>
 
           <div className="policy-text" ref={contentRef}>
