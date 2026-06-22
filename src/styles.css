@@ -214,21 +214,21 @@ body {
 }
 .stat.orb strong { color: var(--blue); font-size: 32px; }
 
-.stats-summary {
+.stats-summary-box {
+  flex: 1;
+  min-width: 200px;
+  padding: 18px 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.6;
-  animation: slideDown 0.2s ease;
 }
-.stats-summary p { flex: 1; }
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+.summary-text {
+  font-size: 17px;
+  line-height: 1.6;
+  font-weight: 400;
+  transition: all 0.3s;
+}
+.summary-text.default {
+  color: var(--text-muted);
 }
 
 /* Filter Badge */
@@ -957,6 +957,30 @@ button {
   cursor: pointer;
 }
 .image-overlay button:hover { background: rgba(255,255,255,0.3); }
+
+.upload-hint {
+  font-size: 11px !important;
+  color: var(--text-muted) !important;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+.upload-error {
+  background: rgba(234,67,53,0.15);
+  color: var(--red);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 0 0 8px 8px;
+  text-align: center;
+}
+.image-dropzone.uploading {
+  background: rgba(66,133,244,0.1);
+  border-color: var(--blue);
+}
+.image-dropzone.uploading .spinner {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 8px;
+}
 
 /* Check Mark View */
 .check-mark-view {

@@ -6,10 +6,10 @@ export default function StatsRail({ positions, activeFilter, onFilter }) {
   const pct = total ? Math.round((approved / total) * 100) : 0;
 
   const summaries = {
-    all: `סה"כ ${total} עמדות פודטראק רשומות במערכת הניהול של אשדוד.`,
-    approved: `${approved} עמדות אושרו ועומדות בכל הדרישות הנדרשות: תשתיות תקינות, רישיון עסק, ואיכות סביבה מתאימה.`,
-    pending: `${pending} עמדות נמצאות בתהליך בדיקה ואישור. יש להשלים את הבדיקות ולעדכן את הסטטוס.`,
-    rejected: `${rejected} עמדות לא אושרו עקב חוסר בתשתיות, בעיות ברישוי, או אי-עמידה בתקנים.`,
+    all: `סה"כ ${total} עמדות פודטראק רשומות במערכת הניהול של אשדוד. מתוכן ${approved} מקובלות, ${pending} בבדיקה ו-${rejected} לא מקובלות.`,
+    approved: `${approved} עמדות אושרו ועומדות בכל הדרישות – תשתיות תקינות, רישיון עסק ואיכות סביבה מתאימה. שיעור האישור: ${pct}%.`,
+    pending: `${pending} עמדות נמצאות בתהליך בדיקה ואישור. יש להשלים את הבדיקות ולעדכן את הסטטוס בהקדם.`,
+    rejected: `${rejected} עמדות לא אושרו עקב חוסר בתשתיות, בעיות ברישוי או אי-עמידה בתקנים. נדרשת פעולה מתקנת.`,
   };
 
   const active = activeFilter;
@@ -18,6 +18,13 @@ export default function StatsRail({ positions, activeFilter, onFilter }) {
   return (
     <section className="stats-rail-wrap">
       <div className="stats-rail">
+        <div className="stats-summary-box glass-panel">
+          {summaryText ? (
+            <p className="summary-text">{summaryText}</p>
+          ) : (
+            <p className="summary-text default">סה"כ {total} עמדות פודטראק רשומות במערכת הניהול של אשדוד.</p>
+          )}
+        </div>
         <button
           className={`stat orb ${active === 'approved' ? 'active-filter' : ''}`}
           onClick={() => onFilter('approved')}
@@ -54,12 +61,6 @@ export default function StatsRail({ positions, activeFilter, onFilter }) {
           <strong>{rejected}</strong><span>לא מקובלות</span>
         </button>
       </div>
-      {summaryText && (
-        <div className="stats-summary glass-panel">
-          <p>{summaryText}</p>
-          <button className="ghost" onClick={() => onFilter(active)}>✕</button>
-        </div>
-      )}
     </section>
   );
 }
