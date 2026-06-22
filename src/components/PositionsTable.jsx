@@ -58,7 +58,9 @@ const COLUMNS = [
   { key: '_pin', label: 'מפה', sortable: false },
 ];
 
-export default function PositionsTable({ positions, update, add, remove, selectedId, setSelectedId, setPage, setPinningId, editMode }) {
+const FILTER_LABELS = { approved: 'מקובלות', pending: 'בבדיקה', rejected: 'לא מקובלות', all: 'כל העמדות' };
+
+export default function PositionsTable({ positions, allPositions, update, add, remove, selectedId, setSelectedId, setPage, setPinningId, editMode, statsFilter, onClearFilter }) {
   const [sortCol, setSortCol] = useState('approval');
   const [sortAsc, setSortAsc] = useState(true);
   const goPin = (id) => { setSelectedId(id); setPinningId(id); setPage('map'); };
@@ -82,7 +84,16 @@ export default function PositionsTable({ positions, update, add, remove, selecte
   return (
     <section className="table-shell glass-panel">
       <div className="section-title">
-        <div><h2>רשימת עמדות</h2><p>{editMode ? 'מצב עריכה – לחצי על שדות לעריכה' : 'מצב תצוגה – לחצי על עמדה לפרטים'}</p></div>
+        <div>
+          <h2>רשימת עמדות</h2>
+          <p>{editMode ? 'מצב עריכה – לחצי על שדות לעריכה' : 'מצב תצוגה – לחצי על עמדה לפרטים'}</p>
+          {statsFilter && (
+            <div className="filter-badge">
+              מסנן: {FILTER_LABELS[statsFilter]} ({positions.length} מתוך {allPositions?.length || positions.length})
+              <button className="ghost filter-clear" onClick={onClearFilter}>✕ נקה</button>
+            </div>
+          )}
+        </div>
         {editMode && (
           <div className="actions">
             <button className="primary" onClick={() => setSelectedId(add())}>+ הוספת עמדה</button>
