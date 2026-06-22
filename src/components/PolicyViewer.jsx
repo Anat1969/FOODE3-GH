@@ -1149,7 +1149,7 @@ export default function PolicyViewer({ onClose }) {
 
           <div className="policy-text" ref={contentRef}>
             {POLICY_SECTIONS.map(ch => (
-              <div key={ch.id} id={`policy-${ch.id}`} className="policy-chapter">
+              <div key={ch.id} id={`policy-${ch.id}`} className="policy-chapter" style={{ background: ch.color + '0a', borderInlineStart: `4px solid ${ch.color}30`, borderRadius: 10, padding: '16px 20px', marginBottom: 32 }}>
                 <h3 className="chapter-heading" style={{ borderColor: ch.color, color: ch.color }}>
                   <span className="chapter-num" style={{ background: ch.color }}>פרק {ch.num}</span>
                   <HighlightText text={ch.title} search={search} />

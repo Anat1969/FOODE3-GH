@@ -1400,7 +1400,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 /* Policy Legend / TOC */
 .policy-legend {
   padding: 16px;
-  border-inline-start: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   overflow-y: auto;
   order: 1;
 }
