@@ -1405,82 +1405,79 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   order: 1;
 }
 .policy-legend h3 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 14px;
-  color: var(--text);
+  margin-bottom: 16px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
 }
 
-.legend-chapter {
-  margin-bottom: 4px;
+.toc {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 2px;
 }
-.legend-chapter-btn {
-  flex: 1;
+
+.toc-chapter {
+  margin-bottom: 6px;
+}
+
+.toc-chapter-btn {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 8px;
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--text);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   text-align: right;
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s;
-  line-height: 1.4;
+  line-height: 1.5;
+  width: 100%;
 }
-.legend-chapter-btn:hover { background: var(--surface-hover); color: var(--text); }
-.legend-chapter-btn.active {
+.toc-chapter-btn:hover { background: var(--surface-hover); }
+.toc-chapter-btn.active {
   background: rgba(66,133,244,0.12);
-  color: var(--text);
-  font-weight: 500;
+  color: var(--blue);
 }
-.legend-color {
-  width: 10px;
-  height: 10px;
+
+.toc-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 5px;
 }
-.legend-num {
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
+
+.toc-num {
+  font-size: 13px;
+  font-weight: 700;
   flex-shrink: 0;
+  opacity: 0.7;
 }
-.legend-title {
+
+.toc-title {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
 }
 
-.legend-expand {
-  width: 28px;
-  height: 28px;
+.toc-subs {
+  padding: 2px 18px 4px 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  flex-shrink: 0;
-  align-self: center;
+  flex-direction: column;
+  gap: 1px;
 }
-.legend-expand:hover { background: var(--surface-hover); }
 
-.legend-subsections {
-  width: 100%;
-  padding: 4px 0 8px 20px;
-}
-.legend-sub-btn {
-  display: block;
+.toc-sub-btn {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
   width: 100%;
   text-align: right;
   background: none;
@@ -1488,16 +1485,29 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   color: var(--text-muted);
   font-family: inherit;
   font-size: 11px;
-  padding: 4px 8px;
+  font-weight: 400;
+  padding: 3px 6px;
   border-radius: 4px;
   cursor: pointer;
   line-height: 1.4;
   transition: all 0.15s;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.legend-sub-btn:hover { background: var(--surface-hover); color: var(--text); }
+.toc-sub-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+.toc-sub-num {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+  min-width: 22px;
+}
+
+.toc-sub-title {
+  flex: 1;
+  white-space: normal;
+  word-break: break-word;
+}
 
 /* Search results in legend */
 .search-results-legend {
