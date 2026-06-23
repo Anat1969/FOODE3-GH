@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import Chip from './Chip.jsx';
 
-const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
+const approvalOptions = ['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל'];
 const buildingOptions = ['אין מבנה', 'יש מבנה', 'מבנה לא מקובל', 'מבנה מקובל'];
-const envOptions = ['מקובל', 'טעון שיפור', 'אזהרה'];
+const envOptions = ['שמורה', 'טעון שיפור', 'אזהרה'];
 
 function CheckMark({ value, onChange, editMode }) {
   const isGood = value === 'טוב';
@@ -31,9 +31,9 @@ function InlineSelect({ value, onChange, options, type }) {
 const VALUE_RANK = {
   'טוב': 0, 'לא טוב': 1,
   'יש': 0, 'אין': 1,
-  'מקובלת': 0, 'בבדיקה': 1, 'לא מקובלת': 2,
+  'מיקום מקובל': 0, 'בבדיקה': 1, 'מיקום לא מקובל': 2,
   'מבנה מקובל': 0, 'יש מבנה': 1, 'מבנה לא מקובל': 2, 'אין מבנה': 3,
-  'מקובל': 0, 'טעון שיפור': 1, 'אזהרה': 2,
+  'שמורה': 0, 'טעון שיפור': 1, 'אזהרה': 2,
 };
 
 function compareValues(a, b) {
@@ -59,7 +59,7 @@ const COLUMNS = [
   { key: 'sewage', label: 'ביוב', group: 'תשתיות' },
   { key: 'buildingQuality', label: 'עיצוב המבנה', group: 'איכות' },
   { key: 'environmentQuality', label: 'איכות הסביבה', group: 'איכות' },
-  { key: 'approval', label: 'האם מקובלת', group: 'סטטוס' },
+  { key: 'approval', label: 'סטטוס מיקום', group: 'סטטוס' },
   { key: 'notes', label: 'הערות', group: 'סטטוס' },
 ];
 
@@ -79,7 +79,7 @@ function buildColGroups(columns) {
 
 const COL_GROUPS = buildColGroups(COLUMNS);
 
-const FILTER_LABELS = { approved: 'מקובלות', pending: 'בבדיקה', rejected: 'לא מקובלות', all: 'כל העמדות' };
+const FILTER_LABELS = { approved: 'מיקום מקובל', pending: 'בבדיקה', rejected: 'מיקום לא מקובל', all: 'כל העמדות' };
 
 const SEARCH_HISTORY_KEY = 'foode3-search-history';
 function loadSearchHistory() {
@@ -127,7 +127,7 @@ export default function PositionsTable({ positions, allPositions, update, add, r
     return sortAsc ? cmp : -cmp;
   });
 
-  const approvalClass = (val) => val === 'מקובלת' ? 'green' : val === 'בבדיקה' ? 'orange' : 'red';
+  const approvalClass = (val) => val === 'מיקום מקובל' ? 'green' : val === 'בבדיקה' ? 'orange' : 'red';
 
   return (
     <section className="table-shell glass-panel">

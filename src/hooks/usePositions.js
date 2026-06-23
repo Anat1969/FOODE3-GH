@@ -127,7 +127,7 @@ export default function usePositions() {
       sewage: 'טוב',
       ownerName: '',
       buildingQuality: 'אין מבנה',
-      environmentQuality: 'מקובל',
+      environmentQuality: 'שמורה',
       approval: 'בבדיקה',
       status: 'בבדיקה',
       notes: '',

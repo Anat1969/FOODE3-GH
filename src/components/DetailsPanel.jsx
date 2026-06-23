@@ -1,8 +1,8 @@
 import ImageUpload from './ImageUpload.jsx';
 
 const buildingOptions = ['אין מבנה', 'יש מבנה', 'מבנה לא מקובל', 'מבנה מקובל'];
-const envOptions = ['מקובל', 'טעון שיפור', 'אזהרה'];
-const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
+const envOptions = ['שמורה', 'טעון שיפור', 'אזהרה'];
+const approvalOptions = ['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל'];
 
 function Field({ label, children }) {
   return <label className="field"><span>{label}</span>{children}</label>;
@@ -29,7 +29,7 @@ function CheckField({ label, value, onChange, editMode }) {
 }
 
 function chipClass(value) {
-  if (['מבנה מקובל', 'מקובל'].includes(value)) return 'green';
+  if (['מבנה מקובל', 'שמורה'].includes(value)) return 'green';
   if (['יש מבנה', 'טעון שיפור'].includes(value)) return 'orange';
   if (['מבנה לא מקובל', 'אזהרה'].includes(value)) return 'red';
   return 'gray';
@@ -91,7 +91,7 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
       {editMode ? (
         <Field label="האם העמדה מקובלת"><select value={selected.approval} onChange={e => update(selected.id, { approval: e.target.value, status: e.target.value })}>{approvalOptions.map(o => <option key={o}>{o}</option>)}</select></Field>
       ) : (
-        <div className="field"><span>האם מקובלת</span><span className={`chip ${selected.approval === 'מקובלת' ? 'green' : selected.approval === 'בבדיקה' ? 'orange' : 'red'}`}>{selected.approval}</span></div>
+        <div className="field"><span>האם מקובלת</span><span className={`chip ${selected.approval === 'מיקום מקובל' ? 'green' : selected.approval === 'בבדיקה' ? 'orange' : 'red'}`}>{selected.approval}</span></div>
       )}
 
       {editMode ? (

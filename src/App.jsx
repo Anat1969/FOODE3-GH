@@ -47,9 +47,9 @@ export default function App() {
 
   const filteredPositions = statsFilter
     ? positions.filter(p => {
-        if (statsFilter === 'approved') return p.approval === 'מקובלת';
+        if (statsFilter === 'approved') return p.approval === 'מיקום מקובל';
         if (statsFilter === 'pending') return p.approval === 'בבדיקה';
-        if (statsFilter === 'rejected') return p.approval === 'לא מקובלת';
+        if (statsFilter === 'rejected') return p.approval === 'מיקום לא מקובל';
         return true;
       })
     : positions;
