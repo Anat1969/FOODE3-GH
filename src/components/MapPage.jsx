@@ -187,9 +187,8 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
               </div>
             </div>
           )}
-        </div>
-        {selected && !pinningId && (
-          <div className="map-info-card glass-panel">
+          {selected && !pinningId && (
+          <div className="map-info-card">
             {selected.foodTruckImageUrl && (
               <div className="map-info-image">
                 <img src={selected.foodTruckImageUrl} alt={selected.foodTruckImageAlt || selected.positionName} />
@@ -209,6 +208,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
             <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>📍 סמן מיקום על המפה</button>
           </div>
         )}
+        </div>
       </div>
       <div className="map-legend">
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מקובלת</span>
