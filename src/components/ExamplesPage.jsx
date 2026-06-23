@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase.js';
+import compressImage from '../utils/compressImage.js';
 
 const STORAGE_KEY = 'foode3-examples';
 const BUCKET = 'images';
@@ -16,15 +17,25 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
+  const [uploadError, setUploadError] = useState(null);
+
   const handleImage = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const path = `examples/${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
-    if (!error) {
+    setUploadError(null);
+    try {
+      const compressed = await compressImage(file);
+      const path = `examples/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, compressed, {
+        upsert: true,
+        contentType: 'image/jpeg',
+      });
+      if (error) throw error;
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
       onUpdate({ imageUrl: data.publicUrl });
+    } catch (err) {
+      setUploadError(err.message || 'שגיאה בהעלאה');
     }
     setUploading(false);
   };
@@ -45,6 +56,7 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
             <button className="example-upload-btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
               {uploading ? '...' : '📷'}
             </button>
+            {uploadError && <div className="upload-error" style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 11 }}>{uploadError}</div>}
           </>
         )}
       </div>

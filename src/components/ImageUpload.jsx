@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { supabase } from '../supabase.js';
+import compressImage from '../utils/compressImage.js';
 
 const SUPABASE_URL = 'https://qgdubavuvvnpasgijyrk.supabase.co';
 
@@ -18,15 +19,15 @@ export default function ImageUpload({ value, onChange, alt }) {
     setUploading(true);
     setError(null);
     try {
-      const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `pos_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const compressed = await compressImage(file);
+      const fileName = `pos_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
 
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('images')
-        .upload(fileName, file, {
+        .upload(fileName, compressed, {
           cacheControl: '31536000',
           upsert: false,
-          contentType: file.type,
+          contentType: 'image/jpeg',
         });
 
       if (uploadError) throw uploadError;
@@ -34,11 +35,8 @@ export default function ImageUpload({ value, onChange, alt }) {
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
       onChange(publicUrl);
     } catch (err) {
-      console.error('Storage upload error:', err);
-      setError('שגיאה בהעלאה – שומר כ-base64');
-      const reader = new FileReader();
-      reader.onload = (e) => onChange(e.target.result);
-      reader.readAsDataURL(file);
+      console.error('Upload error:', err);
+      setError(err.message || 'שגיאה בהעלאת התמונה');
     } finally {
       setUploading(false);
     }
@@ -90,7 +88,7 @@ export default function ImageUpload({ value, onChange, alt }) {
       {uploading ? (
         <div className="image-dropzone uploading">
           <div className="spinner" />
-          <p>מעלה תמונה...</p>
+          <p>דוחס ומעלה תמונה...</p>
         </div>
       ) : value ? (
         <div className="image-preview">
@@ -104,7 +102,7 @@ export default function ImageUpload({ value, onChange, alt }) {
         <div className="image-dropzone" onClick={() => inputRef.current?.click()}>
           <span className="upload-icon">📷</span>
           <p>גררי תמונה לכאן, הדביקי (Ctrl+V) או לחצי לבחירה</p>
-          <p className="upload-hint">JPG, PNG, GIF, WebP עד 5MB</p>
+          <p className="upload-hint">JPG, PNG, GIF, WebP, HEIC · נדחס אוטומטית</p>
         </div>
       )}
       {error && <div className="upload-error">{error}</div>}
