@@ -225,15 +225,17 @@ body {
 .stats-summary-box {
   flex: 1;
   min-width: 200px;
-  padding: 24px 32px;
+  padding: 28px 40px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 .summary-text {
-  font-size: 22px;
-  line-height: 1.6;
+  font-size: 28px;
+  line-height: 1.7;
   font-weight: 400;
   transition: all 0.3s;
+  text-align: center;
 }
 .summary-text.default {
   color: var(--text-muted);
@@ -987,41 +989,66 @@ button {
 /* Map Layout */
 .map-header { margin-bottom: 12px; }
 .map-layout {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 12px;
+  position: relative;
 }
 
 .map-info-card {
-  padding: 20px 24px;
+  position: absolute;
+  top: 32px;
+  right: 32px;
+  width: 380px;
+  z-index: 10;
+  padding: 24px 28px;
   height: fit-content;
+  background: rgba(15, 25, 35, 0.88);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
 }
-.map-info-card h3 { font-size: 20px; margin-bottom: 6px; }
-.map-info-card > p { font-size: 15px; color: var(--text-muted); margin-bottom: 14px; }
+[data-theme="light"] .map-info-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08);
+}
+.map-info-card h3 { font-size: 22px; margin-bottom: 8px; font-weight: 600; }
+.map-info-card > p { font-size: 16px; color: var(--text-muted); margin-bottom: 16px; }
 .map-info-row {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
-.map-info-status { margin-bottom: 10px; }
-.map-info-coords { font-size: 14px; color: var(--text-muted); }
+.map-info-status { margin-bottom: 12px; }
+.map-info-coords { font-size: 15px; color: var(--text-muted); }
 
 .map-info-image {
-  margin-bottom: 14px;
-  border-radius: 10px;
+  margin-bottom: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 2px solid var(--border);
+  border: 2px solid rgba(255,255,255,0.15);
 }
 .map-info-image img {
   width: 100%;
-  height: 200px;
+  height: 220px;
   object-fit: cover;
   display: block;
 }
 
+.map-pin-btn {
+  font-size: 16px;
+  padding: 12px 20px;
+  width: 100%;
+}
+
 @media (max-width: 900px) {
-  .map-layout { grid-template-columns: 1fr; }
+  .map-info-card {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    margin-top: 12px;
+  }
 }
 
 /* MapLibre container */
