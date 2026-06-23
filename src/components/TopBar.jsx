@@ -2,6 +2,7 @@ export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode
   const tabs = [
     ['list', 'רשימת עמדות'],
     ['map', 'מפת עמדות'],
+    ['examples', 'דוגמאות'],
     ['reports', 'דוחות'],
     ['links', 'קישורים'],
     ['settings', 'הגדרות']
