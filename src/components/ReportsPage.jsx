@@ -1,8 +1,8 @@
 export default function ReportsPage({ positions }) {
   const total = positions.length;
-  const approved = positions.filter(p => p.approval === 'מקובלת').length;
+  const approved = positions.filter(p => p.approval === 'מיקום מקובל').length;
   const pending = positions.filter(p => p.approval === 'בבדיקה').length;
-  const rejected = positions.filter(p => p.approval === 'לא מקובלת').length;
+  const rejected = positions.filter(p => p.approval === 'מיקום לא מקובל').length;
   const goodWater = positions.filter(p => p.water === 'טוב').length;
   const goodElec = positions.filter(p => p.electricity === 'טוב').length;
   const goodSewage = positions.filter(p => p.sewage === 'טוב').length;

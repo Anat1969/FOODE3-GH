@@ -4,10 +4,8 @@ const DEFAULT_TABS = [
   ['list', 'רשימת עמדות'],
   ['map', 'מפת עמדות'],
   ['examples', 'דוגמאות'],
-  ['reports', 'דוחות'],
   ['links', 'קישורים'],
   ['policy', '📜 מדיניות'],
-  ['settings', 'הגדרות'],
 ];
 
 const ORDER_KEY = 'foode3-tab-order';

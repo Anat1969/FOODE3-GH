@@ -24,7 +24,7 @@ export function createPosition(overrides = {}) {
     lighting: overrides.lighting || 'טוב',
     buildingQuality: overrides.buildingQuality || pick(['טוב', 'לא טוב']),
     environmentQuality: overrides.environmentQuality || pick(['טוב', 'לא טוב']),
-    approval: overrides.approval || pick(['מקובלת', 'בבדיקה', 'לא מקובלת']),
+    approval: overrides.approval || pick(['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל']),
     status: overrides.status || overrides.approval || 'בבדיקה',
     notes: overrides.notes || '',
     mapPin: overrides.mapPin || { x: Math.round(Math.random() * 100), y: Math.round(Math.random() * 100) },

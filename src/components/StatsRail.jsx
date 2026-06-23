@@ -1,8 +1,8 @@
 export default function StatsRail({ positions, activeFilter, onFilter }) {
   const total = positions.length;
-  const approved = positions.filter(p => p.approval === 'מקובלת').length;
+  const approved = positions.filter(p => p.approval === 'מיקום מקובל').length;
   const pending = positions.filter(p => p.approval === 'בבדיקה').length;
-  const rejected = positions.filter(p => p.approval === 'לא מקובלת').length;
+  const rejected = positions.filter(p => p.approval === 'מיקום לא מקובל').length;
   const complexes = new Set(positions.map(p => p.complexName).filter(Boolean)).size;
   const pct = total ? Math.round((approved / total) * 100) : 0;
 

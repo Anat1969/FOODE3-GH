@@ -211,9 +211,9 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
         </div>
       </div>
       <div className="map-legend">
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מקובלת</span>
+        <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מיקום מקובל</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> לא מקובלת</span>
+        <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> מיקום לא מקובל</span>
       </div>
     </section>
   );
