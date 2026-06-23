@@ -90,7 +90,7 @@ function saveSearchHistory(list) {
 }
 
 export default function PositionsTable({ positions, allPositions, update, add, remove, selectedId, setSelectedId, setPage, setPinningId, editMode, statsFilter, onClearFilter }) {
-  const [sortCol, setSortCol] = useState('approval');
+  const [sortCol, setSortCol] = useState('number');
   const [sortAsc, setSortAsc] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
