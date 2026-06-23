@@ -50,8 +50,8 @@ const COLUMNS = [
   { key: 'number', label: 'מספר', group: 'זיהוי' },
   { key: 'foodTruckImageUrl', label: 'תמונה', sortable: false, group: 'זיהוי' },
   { key: '_pin', label: 'מפה', sortable: false, group: 'זיהוי' },
-  { key: 'positionName', label: 'שם עמדה', group: 'זיהוי' },
   { key: 'complexName', label: 'שם מתחם', group: 'זיהוי' },
+  { key: 'positionName', label: 'שם עמדה', group: 'זיהוי' },
   { key: 'businessName', label: 'שם עסק', group: 'פרטי עסק' },
   { key: 'ownerName', label: 'שם בעלים', group: 'פרטי עסק' },
   { key: 'water', label: 'מים', group: 'תשתיות' },
@@ -210,8 +210,8 @@ export default function PositionsTable({ positions, allPositions, update, add, r
                     ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📌 נעוץ</span>
                     : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button>}
                 </td>
-                <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
                 <td>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>
+                <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
                 <td>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>
                 <td>{editMode ? <input value={row.ownerName || ''} onChange={e => update(row.id, { ownerName: e.target.value })} /> : row.ownerName || '—'}</td>
                 <td><CheckMark value={row.water} editMode={editMode} onChange={v => update(row.id, { water: v })} /></td>

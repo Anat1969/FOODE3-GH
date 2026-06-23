@@ -7,6 +7,7 @@ import MapPage from './components/MapPage.jsx';
 import ReportsPage from './components/ReportsPage.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
 import LinksViewer from './components/LinksViewer.jsx';
+import ExamplesPage from './components/ExamplesPage.jsx';
 import PolicyViewer from './components/PolicyViewer.jsx';
 import usePositions from './hooks/usePositions.js';
 
@@ -110,6 +111,7 @@ export default function App() {
           />
         )}
         {page === 'reports' && <ReportsPage positions={positions} />}
+        {page === 'examples' && <ExamplesPage editMode={editMode} />}
         {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} />}
         {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} />}
       </main>
