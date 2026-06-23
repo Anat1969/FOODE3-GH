@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 const DEFAULT_TABS = [
   ['list', 'רשימת עמדות'],
   ['map', 'מפת עמדות'],
+  ['report', 'דוח לטיפול'],
   ['examples', 'דוגמאות'],
   ['links', 'קישורים'],
   ['policy', '📜 מדיניות'],
@@ -70,7 +71,7 @@ export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode
           <div className="avatar">●</div>
           <span>שלום, מנהל מערכת</span>
         </div>
-        <h1>מערכת ניהול עמדות פודטראק – אשדוד</h1>
+        <h1 className="topbar-logo" onClick={() => setPage('landing')} title="חזרה לדף הבית">מערכת ניהול עמדות פודטראק – אשדוד</h1>
         <div className="save-indicator"><span className="dot green" /> נשמר בזמן אמת {lastSaved && `· ${lastSaved}`}</div>
         <div className="traffic-lights"><i/><i/><i/></div>
       </div>
