@@ -1900,6 +1900,50 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   .tabs-actions { flex-wrap: wrap; }
 }
 
+@media (max-width: 600px) {
+  .topbar { padding: 8px 12px; margin: 8px; }
+  .top-line { gap: 8px; margin-bottom: 4px; }
+  .top-line h1 { font-size: 14px; }
+  .userbox { font-size: 12px; gap: 4px; }
+  .userbox span { display: none; }
+  .avatar { width: 28px; height: 28px; font-size: 14px; }
+  .save-indicator { font-size: 11px; }
+  .traffic-lights { display: none; }
+
+  .tabs-row { flex-direction: column; gap: 6px; }
+  .tabs { flex-wrap: wrap; gap: 2px; justify-content: center; }
+  .tabs button { padding: 6px 12px; font-size: 12px; }
+  .tabs-actions { justify-content: center; }
+
+  .stats-rail-wrap { padding: 0 8px; margin: 8px 0; }
+  .stats-rail { gap: 6px; }
+  .stat { padding: 10px 12px; min-width: 80px; }
+  .stat strong { font-size: 20px; }
+  .stat span { font-size: 10px; }
+  .stat.orb strong { font-size: 22px; }
+  .stats-summary-box { min-width: 140px; padding: 14px 16px; }
+  .summary-text { font-size: 16px; line-height: 1.5; }
+
+  .main-area { padding: 0 8px 16px; }
+  .table-shell { padding: 12px; }
+  .section-title { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .section-title .actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .table-search-bar { flex-wrap: wrap; }
+  .table-search-input { font-size: 14px; }
+
+  .report-header-bar { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .report-print-area { padding: 16px; }
+  .report-letterhead h1 { font-size: 16px; }
+  .report-letterhead h2 { font-size: 14px; }
+  .report-summary-strip { flex-wrap: wrap; gap: 16px; padding: 12px; }
+  .report-summary-item strong { font-size: 22px; }
+  .report-item { padding: 14px; }
+  .report-item-header { gap: 6px; }
+  .report-item-name { font-size: 15px; }
+  .report-meta { gap: 10px; font-size: 12px; }
+  .report-severity-badge { margin-inline-start: 0; }
+}
+
 /* ── Landing Page ─────────────────────────────── */
 .landing-page {
   min-height: 100vh;
@@ -2140,10 +2184,17 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 }
 
 @media (max-width: 768px) {
-  .landing-stats { grid-template-columns: repeat(2, 1fr); }
+  .landing-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .landing-features-grid { grid-template-columns: 1fr; }
   .landing-hero { padding-top: 8vh; }
   .flip-card { height: 140px; }
+  .landing-btn.primary { padding: 14px 32px; font-size: 18px; }
+  .landing-badge { font-size: 12px; padding: 5px 16px; }
+  .landing-subtitle { font-size: 16px; }
+  .landing-features h2 { font-size: 22px; margin-bottom: 24px; }
+  .landing-stat-card { padding: 18px 12px; }
+  .landing-stat-card strong { font-size: 26px; }
+  .landing-features { padding: 0 16px 40px; }
 }
 
 /* Action Report */
