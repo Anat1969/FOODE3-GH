@@ -9,10 +9,11 @@ import SettingsPage from './components/SettingsPage.jsx';
 import LinksViewer from './components/LinksViewer.jsx';
 import ExamplesPage from './components/ExamplesPage.jsx';
 import PolicyViewer from './components/PolicyViewer.jsx';
+import LandingPage from './components/LandingPage.jsx';
 import usePositions from './hooks/usePositions.js';
 
 export default function App() {
-  const [page, setPage] = useState('list');
+  const [page, setPage] = useState('landing');
   const [selectedId, setSelectedId] = useState(null);
   const [pinningId, setPinningId] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
@@ -55,6 +56,8 @@ export default function App() {
     : positions;
 
   if (loading) return <div className="loading-screen"><div className="spinner" /><p>טוען נתונים…</p></div>;
+
+  if (page === 'landing') return <LandingPage onEnter={() => setPage('list')} />;
 
   return (
     <div className="app-shell">
