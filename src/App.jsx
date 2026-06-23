@@ -5,6 +5,7 @@ import PositionsTable from './components/PositionsTable.jsx';
 import DetailsPanel from './components/DetailsPanel.jsx';
 import MapPage from './components/MapPage.jsx';
 import ReportsPage from './components/ReportsPage.jsx';
+import ActionReportPage from './components/ActionReportPage.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
 import LinksViewer from './components/LinksViewer.jsx';
 import ExamplesPage from './components/ExamplesPage.jsx';
@@ -113,6 +114,7 @@ export default function App() {
           />
         )}
         {page === 'reports' && <ReportsPage positions={positions} />}
+        {page === 'report' && <ActionReportPage positions={positions} />}
         {page === 'examples' && <ExamplesPage editMode={editMode} />}
         {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} />}
         {page === 'policy' && <PolicyViewer />}
