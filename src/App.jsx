@@ -19,7 +19,6 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [statsFilter, setStatsFilter] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('foode3-theme') || 'dark');
-  const [showPolicy, setShowPolicy] = useState(false);
   const [iframeUrl, setIframeUrl] = useState(null);
   const { positions, update, add, remove, duplicate, loading } = usePositions();
 
@@ -65,7 +64,7 @@ export default function App() {
         lastSaved={lastSaved}
         editMode={editMode}
         setEditMode={setEditMode}
-        onShowPolicy={() => setShowPolicy(true)}
+        onShowPolicy={() => setPage('policy')}
       />
       <StatsRail
         positions={positions}
@@ -113,9 +112,9 @@ export default function App() {
         {page === 'reports' && <ReportsPage positions={positions} />}
         {page === 'examples' && <ExamplesPage editMode={editMode} />}
         {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} />}
+        {page === 'policy' && <PolicyViewer />}
         {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} />}
       </main>
-      {showPolicy && <PolicyViewer onClose={() => setShowPolicy(false)} />}
     </div>
   );
 }

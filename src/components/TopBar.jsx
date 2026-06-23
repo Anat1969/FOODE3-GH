@@ -36,11 +36,7 @@ export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode
   const allTabs = [...orderedTabs, ...missingTabs];
 
   const handleTabClick = (id) => {
-    if (id === 'policy') {
-      onShowPolicy();
-    } else {
-      setPage(id);
-    }
+    setPage(id);
   };
 
   const handleDragStart = (e, id) => {

@@ -299,7 +299,7 @@ function HighlightText({ text, search }) {
   );
 }
 
-export default function PolicyViewer({ onClose }) {
+export default function PolicyViewer() {
   const [activeChapter, setActiveChapter] = useState('ch1');
   const [search, setSearch] = useState(() => localStorage.getItem(SEARCH_KEY) || '');
   const [edits, setEdits] = useState(loadEdits);
@@ -366,11 +366,9 @@ export default function PolicyViewer({ onClose }) {
   let subCounter = 0;
 
   return (
-    <div className="policy-overlay" onClick={onClose}>
-      <div className="policy-modal glass-panel" onClick={e => e.stopPropagation()}>
+    <section className="policy-page glass-panel">
         <div className="policy-header">
           <h2>הצבת פודטראק במרחב הציבורי – אשדוד</h2>
-          <button className="ghost policy-close" onClick={onClose}>✕</button>
         </div>
 
         <div className="policy-search-wrap">
@@ -493,7 +491,6 @@ export default function PolicyViewer({ onClose }) {
             })}
           </div>
         </div>
-      </div>
-    </div>
+    </section>
   );
 }
