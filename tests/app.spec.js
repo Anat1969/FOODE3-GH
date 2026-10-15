@@ -88,7 +88,12 @@ async function noHorizontalScroll(page) {
 async function contrastOf(locator) {
   return locator.evaluate((el) => {
     const c = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-    const rgba = (css) => { c.clearRect(0, 0, 1, 1); c.fillStyle = '#000'; c.fillStyle = css; c.fillRect(0, 0, 1, 1); const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255]; };
+    const rgba = (css) => {
+      const m = css.match(/^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)$/);
+      if (m) return [m[1] * 255, m[2] * 255, m[3] * 255, m[4] === undefined ? 1 : Number(m[4])];
+      c.clearRect(0, 0, 1, 1); c.fillStyle = 'rgba(0,0,0,0)'; c.fillStyle = css; c.fillRect(0, 0, 1, 1);
+      const d = c.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255];
+    };
     const layers = [];
     for (let n = el; n; n = n.parentElement) {
       const bg = rgba(getComputedStyle(n).backgroundColor);
@@ -116,7 +121,8 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'עמדות הפודטראק של אשדוד' })).toBeVisible();
   await expect(page.locator('.stat-tile').first()).toContainText('4');
   await expect(page.locator('.brand')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'שיחת הפיתוח' })).toHaveAttribute('href', /claude\.ai\/code\/session_/);
+  await expect(page.locator('.city-logo')).toBeVisible();
+  await expect(page.locator('.topbar').getByRole('button', { name: 'העתקת קישור' })).toHaveCount(0);
 
   for (const name of ['רשימת עמדות', 'מפת עמדות', 'דוח לטיפול', 'דוגמאות', 'קישורים', 'מדיניות', 'הגדרות']) {
     await page.locator('.tabs').getByRole('button', { name }).click();
@@ -126,8 +132,11 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
   await page.locator('.brand').click();
   await expect(page.getByRole('heading', { name: 'עמדות הפודטראק של אשדוד' })).toBeVisible();
 
+  await page.locator('.tabs').getByRole('button', { name: 'הגדרות' }).click();
+  await expect(page.getByRole('link', { name: 'שיחת הפיתוח' })).toHaveAttribute('href', /claude\.ai\/code\/session_/);
+  await expect(page.getByRole('link', { name: 'פרויקט המחקר' })).toHaveAttribute('href', /claude\.ai\/project\/019e3627/);
   await page.getByRole('button', { name: 'העתקת קישור' }).click();
-  await expect(page.locator('.toast')).toHaveText('הקישור הועתק');
+  await expect(page.locator('.toast')).toHaveText('הקישור לאפליקציה הועתק');
 });
 
 test('row, image and location open the card; card is linkable', async ({ page }) => {
@@ -159,15 +168,15 @@ test('row, image and location open the card; card is linkable', async ({ page })
 test('editing in the card saves through the guarded write', async ({ page }) => {
   const { writes } = await mockSupabase(page);
   await page.goto('/?p=list&pos=00000000-0000-4000-8000-000000000001');
-  await page.getByRole('button', { name: 'עריכה', exact: true }).click();
-  const name = page.locator('.card-field', { hasText: 'שם עמדה' }).locator('input');
-  await name.fill('עמדה מעודכנת');
+  await page.locator('.card-title-input').fill('עמדה מעודכנת');
   await page.locator('.card-field', { hasText: 'שם היזם' }).locator('input').fill('יוסי');
   await expect.poll(() => writes.find(w => w.p_table === 'positions' && w.p_data.position_name === 'עמדה מעודכנת')).toBeTruthy();
   const w = writes.find(x => x.p_data.position_name === 'עמדה מעודכנת');
   expect(w.p_data.developer_name).toBe('יוסי');
   expect(w.p_op).toBe('upsert');
-  await expect(page.locator('.card-head h2')).toHaveText('עמדה מעודכנת');
+  await expect(page.locator('.card-title-input')).toHaveValue('עמדה מעודכנת');
+  await page.getByRole('button', { name: 'העתקת קישור לכרטיס' }).click();
+  await expect(page.locator('.toast').last()).toHaveText('הקישור לכרטיס הועתק');
 
   await page.locator('.card-field', { hasText: 'סטטוס מיקום' }).locator('select').selectOption('מיקום לא מקובל');
   await expect.poll(() => writes.find(w2 => w2.p_table === 'position_events' && w2.p_data.kind === 'status')).toBeTruthy();
@@ -186,14 +195,14 @@ test('harmonica: corrections, approval, email and documents', async ({ page }) =
   await expect.poll(() => writes.find(w => w.p_data.kind === 'correction' && w.p_data.body === 'להוסיף פרט הצללה')).toBeTruthy();
   await expect(page.locator('.correction-list li')).toHaveCount(2);
 
-  await page.locator('.correction-list li').last().getByRole('button', { name: 'סימון כטופלה' }).click();
+  await page.locator('.correction-list li').last().getByRole('button', { name: 'פתוחה' }).click();
   await expect.poll(() => writes.find(w => w.p_id === 'e1' && w.p_data.resolved === true)).toBeTruthy();
 
   await page.getByRole('button', { name: 'שליחת מייל ליזם' }).click();
   await expect.poll(() => writes.find(w => w.p_data.kind === 'email')).toBeTruthy();
   expect(writes.find(w => w.p_data.kind === 'email').p_data.meta.to).toBe('dana@example.com');
 
-  await page.getByRole('button', { name: 'אישור ההרמוניקה' }).click();
+  await page.getByRole('button', { name: 'כן, מאושרת' }).click();
   await expect(page.locator('.harmonica-status')).toContainText('מאושרת');
   await expect.poll(() => writes.find(w => w.p_table === 'positions' && w.p_data.harmonica_status === 'מאושרת')).toBeTruthy();
   expect(writes.find(w => w.p_data.harmonica_status === 'מאושרת').p_data.harmonica_approved_by).toBe('ענת');
@@ -216,26 +225,40 @@ test('harmonica: corrections, approval, email and documents', async ({ page }) =
 
   await page.locator('.card-tabs').getByRole('tab', { name: /היסטוריה/ }).click();
   await expect(page.locator('.timeline li').first()).toBeVisible();
+  await page.locator('.note-composer.dated input[type=date]').fill('2026-09-01');
   await page.getByPlaceholder('רישום חדש ביומן העמדה').fill('שיחה עם היזם');
   await page.getByRole('button', { name: 'הוספה ליומן' }).click();
+  await expect.poll(() => writes.find(w => w.p_data.body === 'שיחה עם היזם')?.p_data.created_at || '').toMatch(/^2026-09-0[12]/);
   await expect(page.locator('.timeline')).toContainText('שיחה עם היזם');
+
+  // Link instead of a file
+  await page.locator('.card-tabs').getByRole('tab', { name: /מסמכים/ }).click();
+  await page.getByPlaceholder('https://').fill('https://drive.example.com/plan');
+  await page.getByPlaceholder('שם הקישור (לא חובה)').fill('תכנית בדרייב');
+  await page.getByRole('button', { name: 'הוספת קישור' }).click();
+  await expect.poll(() => writes.find(w => w.p_table === 'documents' && w.p_data.file_url === 'https://drive.example.com/plan' && w.p_data.title === 'תכנית בדרייב')).toBeTruthy();
 });
 
 test('view-only visitors see the card but cannot edit', async ({ page }) => {
   const { writes } = await mockSupabase(page, { editor: false });
   await page.goto('/?p=list&pos=00000000-0000-4000-8000-000000000001&tab=harmonica');
   await expect(page.locator('.position-card')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'עריכה', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'אישור ההרמוניקה' })).toHaveCount(0);
-  await expect(page.getByText('תצוגה בלבד')).toBeVisible();
+  await expect(page.locator('.card-title-input')).toHaveCount(0);
+  await expect(page.locator('.position-card .inline-field')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'כן, מאושרת' })).toHaveCount(0);
+  await expect(page.locator('.dropzone')).toHaveCount(0);
+  await expect(page.locator('.position-card').getByText('תצוגה בלבד')).toBeVisible();
   expect(writes).toHaveLength(0);
 });
 
 test('table edit mode, legacy values stay visible and readable', async ({ page }) => {
   const { writes } = await mockSupabase(page);
   await page.goto('/?p=list');
-  await page.getByRole('button', { name: 'מצב תצוגה' }).click();
-  const select = page.locator('tbody tr').nth(2).locator('select.inline-select').last();
+  await expect(page.locator('.table-search-input')).toBeVisible();
+  await page.locator('.table-search-input').fill('לכיש');
+  await expect(page.locator('tbody tr:not(.group-head)')).toHaveCount(2);
+  await page.locator('.table-search-input').fill('');
+  const select = page.locator('tbody tr').nth(2).locator('select.pill-select').last();
   await expect(select).toHaveValue('מקובלת');
   await select.selectOption('מיקום מקובל');
   await expect.poll(() => writes.find(w => w.p_data.approval === 'מיקום מקובל')).toBeTruthy();
@@ -243,17 +266,32 @@ test('table edit mode, legacy values stay visible and readable', async ({ page }
   // Option lists and status pills keep at least 4.5:1 contrast in both themes
   for (const theme of ['dark', 'light']) {
     await page.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
-    const optionBg = await page.locator('select.inline-select option').first().evaluate(o => [getComputedStyle(o).backgroundColor, getComputedStyle(o).color]);
+    await page.waitForTimeout(450);
+    const optionBg = await page.locator('select.pill-select option').first().evaluate(o => [getComputedStyle(o).backgroundColor, getComputedStyle(o).color]);
     expect(optionBg[0]).not.toBe(optionBg[1]);
-    for (const loc of [page.locator('select.inline-select').first(), page.locator('.pill.button').first(), page.locator('thead th').nth(3)]) {
-      expect(await contrastOf(loc)).toBeGreaterThanOrEqual(4.5);
+    for (const loc of [page.locator('select.pill-select').first(), page.locator('.pill.button').first(), page.locator('.sort-button').nth(2)]) {
+      const ratio = await contrastOf(loc);
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
     }
   }
-  await page.getByRole('button', { name: 'מצב עריכה' }).click();
+
+  // Sorting by a category frames rows into groups; the sorted column shows an arrow
+  await page.locator('.sort-button', { hasText: 'שם מתחם' }).click();
+  await expect(page.locator('tbody.row-group')).toHaveCount(2);
+  await expect(page.locator('tr.group-head').first()).toContainText('טיילת המרינה');
+  await expect(page.locator('th.sorted .sort-arrow')).toHaveText('↑');
+  await page.locator('.sort-button', { hasText: 'שם מתחם' }).click();
+  await expect(page.locator('th.sorted .sort-arrow')).toHaveText('↓');
+  await expect(page.locator('tr.group-head').first()).toContainText('נחל לכיש');
+  await page.locator('.sort-button', { hasText: 'מספר' }).click();
+  await expect(page.locator('tbody.row-group')).toHaveCount(0);
+  await page.locator('tbody tr').first().locator('.pill.button.toggle').first().click();
+  await expect.poll(() => writes.find(w => w.p_data.water)).toBeTruthy();
   for (const theme of ['dark', 'light']) {
     await page.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
+    await page.waitForTimeout(450);
     for (const tone of ['green', 'orange', 'red']) {
-      const pill = page.locator(`td .pill.${tone}`).first();
+      const pill = page.locator(`td .pill.${tone}, td .pill-select.tone-${tone}`).first();
       if (await pill.count()) expect(await contrastOf(pill)).toBeGreaterThanOrEqual(4.5);
     }
   }
@@ -275,7 +313,7 @@ test('map markers open the card', async ({ page }) => {
 test('examples and links pages load from the new tables', async ({ page }) => {
   await mockSupabase(page);
   await page.goto('/?p=examples');
-  await expect(page.getByText('ספסל מובנה')).toBeVisible();
+  await expect(page.locator('.example-title-input').first()).toHaveValue('ספסל מובנה');
   await page.goto('/?p=links');
   await expect(page.locator('.links-list')).toContainText('מצגת');
 });
@@ -316,7 +354,17 @@ test('screenshots for review', async ({ page }) => {
   await page.waitForTimeout(1500);
   await page.screenshot({ path: 'test-results/home.png', fullPage: true });
   await page.goto('/?p=list');
+  await page.locator('.sort-button', { hasText: 'סטטוס מיקום' }).click();
   await page.screenshot({ path: 'test-results/list.png' });
+  await page.evaluate(() => { localStorage.setItem('foode3-theme', 'light'); document.documentElement.setAttribute('data-theme', 'light'); });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: 'test-results/list-light.png' });
+  await page.goto('/?p=list&pos=00000000-0000-4000-8000-000000000001&tab=history');
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: 'test-results/card-history-light.png' });
+  await page.goto('/');
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: 'test-results/home-light.png' });
   await page.goto('/?p=list&pos=00000000-0000-4000-8000-000000000001&tab=harmonica');
   await page.waitForTimeout(500);
   await page.screenshot({ path: 'test-results/card-harmonica.png' });

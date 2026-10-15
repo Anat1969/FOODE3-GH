@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const DEV_CHAT_URL = 'https://claude.ai/code/session_01ELjmgCtCVbBT1AstY1Wrrk';
+export const RESEARCH_URL = 'https://claude.ai/project/019e3627-fb8b-769c-8380-1daf25bcf8b7';
 
-const DEFAULT_TABS = [
+export const TABS = [
   ['list', 'רשימת עמדות'],
   ['map', 'מפת עמדות'],
   ['report', 'דוח לטיפול'],
@@ -11,16 +12,6 @@ const DEFAULT_TABS = [
   ['policy', 'מדיניות'],
   ['settings', 'הגדרות'],
 ];
-
-const ORDER_KEY = 'foode3-tab-order';
-
-function loadOrder() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(ORDER_KEY));
-    if (Array.isArray(saved) && saved.length) return saved;
-  } catch { /* ignore */ }
-  return null;
-}
 
 function SaveIndicator({ saveState, editor }) {
   if (!editor) return <span className="save-indicator"><i className="dot gray" />תצוגה בלבד</span>;
@@ -33,14 +24,8 @@ function SaveIndicator({ saveState, editor }) {
   );
 }
 
-export default function TopBar({ page, go, editor, editMode, setEditMode, saveState, onCopyLink, canInstall, onInstall }) {
-  const [tabOrder, setTabOrder] = useState(() => loadOrder() || DEFAULT_TABS.map(t => t[0]));
-  const [dragId, setDragId] = useState(null);
+export default function TopBar({ page, go, editor, saveState }) {
   const ref = useRef(null);
-
-  useEffect(() => {
-    try { localStorage.setItem(ORDER_KEY, JSON.stringify(tabOrder)); } catch { /* ignore */ }
-  }, [tabOrder]);
 
   // Exposes the bar height so cards and overlays open below it.
   useEffect(() => {
@@ -52,70 +37,28 @@ export default function TopBar({ page, go, editor, editMode, setEditMode, saveSt
     return () => ro.disconnect();
   }, []);
 
-  const allTabs = [
-    ...tabOrder.map(id => DEFAULT_TABS.find(t => t[0] === id)).filter(Boolean),
-    ...DEFAULT_TABS.filter(t => !tabOrder.includes(t[0])),
-  ];
-  const canDrag = editor && editMode;
-
-  const handleDrop = (e, targetId) => {
-    e.preventDefault();
-    if (!dragId || dragId === targetId) return;
-    setTabOrder(prev => {
-      const order = allTabs.map(t => t[0]);
-      const from = order.indexOf(dragId);
-      const to = order.indexOf(targetId);
-      if (from === -1 || to === -1) return prev;
-      order.splice(from, 1);
-      order.splice(to, 0, dragId);
-      return order;
-    });
-    setDragId(null);
-  };
-
   return (
     <header className="topbar" ref={ref}>
       <div className="topbar-row">
-        <a
-          className="brand"
-          href="/"
-          onClick={e => { e.preventDefault(); go('home'); }}
-          title="דף הבית"
-        >
+        <a className="brand" href="/" onClick={e => { e.preventDefault(); go('home'); }} title="דף הבית">
           <img src="/icon-192.png" alt="" className="brand-mark" width="32" height="32" />
           <span className="brand-text">
             <span className="brand-name">פודטראק אשדוד</span>
             <span className="brand-sub">ניהול עמדות</span>
           </span>
         </a>
-        <div className="topbar-tools">
-          <SaveIndicator saveState={saveState} editor={editor} />
-          {editor && (
-            <button className={`btn small ${editMode ? 'primary' : ''}`} onClick={() => setEditMode(!editMode)} title="עריכה ישירה בטבלה">
-              {editMode ? 'מצב עריכה' : 'מצב תצוגה'}
+        <nav className="tabs" aria-label="ניווט ראשי">
+          {TABS.map(([id, label]) => (
+            <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => go(id)}>
+              {label}
             </button>
-          )}
-          <button className="btn small" onClick={onCopyLink}>העתקת קישור</button>
-          <a className="btn small" href={DEV_CHAT_URL} target="_blank" rel="noreferrer">שיחת הפיתוח</a>
-          {canInstall && <button className="btn small" onClick={onInstall}>התקנת האפליקציה</button>}
+          ))}
+        </nav>
+        <div className="topbar-end">
+          <SaveIndicator saveState={saveState} editor={editor} />
+          <img src="/ashdod-logo.png" alt="עיריית אשדוד" className="city-logo" height="40" />
         </div>
       </div>
-      <nav className="tabs" aria-label="ניווט ראשי">
-        {allTabs.map(([id, label]) => (
-          <button
-            key={id}
-            className={page === id ? 'active' : ''}
-            aria-current={page === id ? 'page' : undefined}
-            onClick={() => go(id)}
-            draggable={canDrag}
-            onDragStart={canDrag ? (e) => { setDragId(id); e.dataTransfer.effectAllowed = 'move'; } : undefined}
-            onDragOver={canDrag ? (e) => e.preventDefault() : undefined}
-            onDrop={canDrag ? (e) => handleDrop(e, id) : undefined}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
     </header>
   );
 }
