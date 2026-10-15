@@ -1,20 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../supabase.js';
+import { useState, useRef, useEffect } from 'react';
+import { uploadFile } from '../supabase.js';
+import useRecords from '../hooks/useRecords.js';
 import compressImage from '../utils/compressImage.js';
-
-const STORAGE_KEY = 'foode3-examples';
-const BUCKET = 'images';
-
-function loadLocal() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
-}
-
-function saveLocal(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
 
 function ExampleCard({ item, onUpdate, onDelete, editMode }) {
   const fileRef = useRef(null);
+  const [draft, setDraft] = useState({ title: item.title || '', description: item.description || '' });
+  useEffect(() => { setDraft({ title: item.title || '', description: item.description || '' }); }, [item.title, item.description]);
+  const commit = (key) => { if ((item[key] || '') !== draft[key]) onUpdate({ [key]: draft[key] }); };
   const [uploading, setUploading] = useState(false);
 
   const [uploadError, setUploadError] = useState(null);
@@ -26,14 +19,8 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
     setUploadError(null);
     try {
       const compressed = await compressImage(file);
-      const path = `examples/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
-      const { error } = await supabase.storage.from(BUCKET).upload(path, compressed, {
-        upsert: true,
-        contentType: 'image/jpeg',
-      });
-      if (error) throw error;
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      onUpdate({ imageUrl: data.publicUrl });
+      const { publicUrl } = await uploadFile('foode-images', compressed, { folder: 'examples', ext: 'jpg' });
+      onUpdate({ imageUrl: publicUrl });
     } catch (err) {
       setUploadError(err.message || 'שגיאה בהעלאה');
     }
@@ -41,7 +28,7 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
   };
 
   return (
-    <div className="example-card glass-panel">
+    <div className="example-card panel">
       <div className="example-image-wrap">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title || 'דוגמה'} className="example-image" />
@@ -54,7 +41,7 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
           <>
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleImage} />
             <button className="example-upload-btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? '...' : '📷'}
+              {uploading ? 'מעלה…' : 'תמונה'}
             </button>
             {uploadError && <div className="upload-error" style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 11 }}>{uploadError}</div>}
           </>
@@ -65,17 +52,19 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
           <>
             <input
               className="example-title-input"
-              value={item.title || ''}
-              onChange={e => onUpdate({ title: e.target.value })}
+              value={draft.title}
+              onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
+              onBlur={() => commit('title')}
               placeholder="כותרת..."
             />
             <textarea
               className="example-desc-input"
-              value={item.description || ''}
-              onChange={e => onUpdate({ description: e.target.value })}
+              value={draft.description}
+              onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
+              onBlur={() => commit('description')}
               placeholder="הסבר..."
             />
-            <button className="danger example-delete" onClick={onDelete}>מחיקה</button>
+            <button className="btn danger example-delete" onClick={() => { if (window.confirm('להסיר את הדוגמה?')) onDelete(); }}>הסרה</button>
           </>
         ) : (
           <>
@@ -88,69 +77,27 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
   );
 }
 
-export default function ExamplesPage({ editMode }) {
-  const [examples, setExamples] = useState([]);
-  const [loaded, setLoaded] = useState(false);
+export default function ExamplesPage({ editMode, onError }) {
+  const { rows: examples, save, remove } = useRecords('examples', { onError });
 
-  useEffect(() => {
-    supabase
-      .from('examples')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          setExamples(loadLocal());
-        } else {
-          setExamples(data || []);
-        }
-        setLoaded(true);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (loaded) saveLocal(examples);
-  }, [examples, loaded]);
-
-  const updateExample = (id, patch) => {
-    setExamples(prev => {
-      const updated = prev.map(ex => ex.id === id ? { ...ex, ...patch } : ex);
-      const item = updated.find(ex => ex.id === id);
-      if (item) {
-        supabase.from('examples').upsert(item).then(() => {});
-      }
-      return updated;
-    });
-  };
+  const updateExample = (id, patch) => { save(id, patch).catch(() => {}); };
 
   const addExample = (type) => {
-    const item = {
-      id: crypto.randomUUID(),
-      type,
-      title: '',
-      description: '',
-      imageUrl: null,
-      created_at: new Date().toISOString(),
-    };
-    setExamples(prev => [...prev, item]);
-    supabase.from('examples').insert(item).then(() => {});
+    save(crypto.randomUUID(), { type, title: '', description: '', imageUrl: null }).catch(() => {});
   };
 
-  const deleteExample = (id) => {
-    setExamples(prev => prev.filter(ex => ex.id !== id));
-    supabase.from('examples').delete().eq('id', id).then(() => {});
-  };
+  const deleteExample = (id) => remove(id);
 
   const good = examples.filter(ex => ex.type === 'good');
   const bad = examples.filter(ex => ex.type === 'bad');
 
   return (
-    <section className="examples-page glass-panel">
+    <section className="examples-page panel">
       <div className="examples-split">
         <div className="examples-column good">
           <div className="examples-col-header good">
-            <span className="examples-col-icon">✓</span>
             <h3>דוגמאות טובות</h3>
-            {editMode && <button className="primary examples-add" onClick={() => addExample('good')}>+ הוספה</button>}
+            {editMode && <button className="btn primary examples-add" onClick={() => addExample('good')}>הוספה</button>}
           </div>
           <div className="examples-grid">
             {good.length === 0 && <p className="muted examples-empty">{editMode ? 'לחצי "הוספה" כדי להוסיף דוגמה טובה' : 'אין דוגמאות'}</p>}
@@ -168,9 +115,8 @@ export default function ExamplesPage({ editMode }) {
         <div className="examples-divider" />
         <div className="examples-column bad">
           <div className="examples-col-header bad">
-            <span className="examples-col-icon">✗</span>
             <h3>דוגמאות רעות</h3>
-            {editMode && <button className="primary examples-add" onClick={() => addExample('bad')}>+ הוספה</button>}
+            {editMode && <button className="btn primary examples-add" onClick={() => addExample('bad')}>הוספה</button>}
           </div>
           <div className="examples-grid">
             {bad.length === 0 && <p className="muted examples-empty">{editMode ? 'לחצי "הוספה" כדי להוסיף דוגמה רעה' : 'אין דוגמאות'}</p>}

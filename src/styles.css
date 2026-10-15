@@ -1,40 +1,57 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
-
+/* Base tokens. Fonts are loaded in index.html. The design layer lives in design.css. */
 :root {
-  --bg: #0f1923;
-  --surface: rgba(255, 255, 255, 0.06);
-  --surface-hover: rgba(255, 255, 255, 0.1);
-  --border: rgba(255, 255, 255, 0.1);
-  --text: #e8eaed;
-  --text-muted: #9aa0a6;
-  --green: #34a853;
-  --orange: #fbbc04;
-  --red: #ea4335;
-  --blue: #4285f4;
-  --radius: 12px;
-  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --bg: #101214;
+  --bg-2: #171a1d;
+  --surface: #1a1d21;
+  --surface-solid: #1a1d21;
+  --surface-2: #22262b;
+  --surface-hover: #262b30;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #eceef0;
+  --text-muted: #a7adb4;
+  --green: #63d18f;
+  --orange: #f2b64c;
+  --red: #ff8077;
+  --blue: #8ab8ff;
+  --accent: #dfe3e8;
+  --accent-ink: #101214;
+  --radius: 14px;
+  --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 40px -18px rgba(0,0,0,0.65), 0 2px 6px rgba(0,0,0,0.35);
+  --shadow-lift: 0 30px 70px -20px rgba(0,0,0,0.75), 0 4px 14px rgba(0,0,0,0.4);
+  --font: 'IBM Plex Sans Hebrew', 'Rubik', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', 'IBM Plex Sans Hebrew', ui-monospace, monospace;
+  --topbar-h: 112px;
+  color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --bg: #f0f2f5;
-  --surface: rgba(255, 255, 255, 0.85);
-  --surface-hover: rgba(255, 255, 255, 0.95);
-  --border: rgba(0, 0, 0, 0.12);
-  --text: #1a1a2e;
-  --text-muted: #5f6368;
-  --green: #1e7e34;
-  --orange: #e8a000;
-  --red: #c62828;
-  --blue: #1a73e8;
-  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --bg: #e9ecef;
+  --bg-2: #f4f5f7;
+  --surface: #ffffff;
+  --surface-solid: #ffffff;
+  --surface-2: #f2f4f6;
+  --surface-hover: #eceff2;
+  --border: rgba(16, 24, 32, 0.12);
+  --border-strong: rgba(16, 24, 32, 0.22);
+  --text: #15181b;
+  --text-muted: #525960;
+  --green: #17693a;
+  --orange: #8a5100;
+  --red: #b3261e;
+  --blue: #1f5fbf;
+  --accent: #1d2125;
+  --accent-ink: #ffffff;
+  --shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 16px 34px -20px rgba(20,30,40,0.35), 0 2px 6px rgba(20,30,40,0.08);
+  --shadow-lift: 0 30px 60px -24px rgba(20,30,40,0.45), 0 4px 14px rgba(20,30,40,0.12);
+  color-scheme: light;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Calibri Light', 'Calibri', 'Rubik', 'Heebo', sans-serif;
-  font-weight: 300;
+  font-family: var(--font);
+  font-weight: 400;
   background: var(--bg);
   color: var(--text);
   direction: rtl;
@@ -42,11 +59,10 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 
-.glass-panel {
+.glass-panel, .panel {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  backdrop-filter: blur(16px);
   box-shadow: var(--shadow);
 }
 
@@ -1142,7 +1158,7 @@ button {
   background: rgba(0,0,0,0.85);
   color: #fff;
   font-size: 11px;
-  font-family: 'Heebo', sans-serif;
+  font-family: var(--font);
   padding: 2px 8px;
   border-radius: 4px;
   white-space: nowrap;
@@ -1952,7 +1968,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: 'Heebo', 'Rubik', sans-serif;
+  font-family: var(--font);
   color: var(--text);
   opacity: 0;
   transform: translateY(20px);

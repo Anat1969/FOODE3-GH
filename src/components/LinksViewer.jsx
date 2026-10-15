@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../supabase.js';
+import useRecords from '../hooks/useRecords.js';
 
 function toEmbedUrl(url) {
   if (!url) return url;
@@ -29,52 +29,24 @@ function canEmbed(url) {
   return true;
 }
 
-export default function LinksViewer({ iframeUrl, setIframeUrl }) {
-  const [links, setLinks] = useState([]);
+export default function LinksViewer({ iframeUrl, setIframeUrl, canEdit, onError }) {
+  const { rows: links, save, remove } = useRecords('links', { onError });
   const [newTitle, setNewTitle] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    supabase
-      .from('links')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          const saved = localStorage.getItem('foode3-links');
-          if (saved) setLinks(JSON.parse(saved));
-        } else {
-          setLinks(data || []);
-        }
-      });
-  }, []);
-
-  const saveLink = async (link) => {
-    const { error } = await supabase.from('links').insert(link);
-    if (error) {
-      localStorage.setItem('foode3-links', JSON.stringify([...links, link]));
-    }
-  };
-
-  const deleteLink = async (id) => {
-    await supabase.from('links').delete().eq('id', id);
-    setLinks(prev => prev.filter(l => l.id !== id));
-    if (links.find(l => l.id === id)?.url === iframeUrl) setIframeUrl(null);
+  const deleteLink = (id) => {
+    const link = links.find(l => l.id === id);
+    if (!window.confirm(`להסיר את הקישור "${link?.title || ''}"?`)) return;
+    remove(id);
+    if (link?.url === iframeUrl) setIframeUrl(null);
   };
 
   const addLink = () => {
     if (!newUrl.trim()) return;
     let url = newUrl.trim();
     if (!/^https?:\/\//.test(url)) url = 'https://' + url;
-    const link = {
-      id: crypto.randomUUID(),
-      title: newTitle.trim() || url,
-      url,
-      created_at: new Date().toISOString(),
-    };
-    setLinks(prev => [...prev, link]);
-    saveLink(link);
+    save(crypto.randomUUID(), { title: newTitle.trim() || url, url }).catch(() => {});
     setNewTitle('');
     setNewUrl('');
     setIframeUrl(url);
@@ -97,11 +69,11 @@ export default function LinksViewer({ iframeUrl, setIframeUrl }) {
   };
 
   return (
-    <section className="links-page glass-panel">
+    <section className="links-page panel">
       <div className="links-layout">
         <div className="links-sidebar">
           <h2>קישורים</h2>
-          <div className="links-add">
+          {canEdit && <div className="links-add">
             <input
               placeholder="שם הקישור"
               value={newTitle}
@@ -114,27 +86,26 @@ export default function LinksViewer({ iframeUrl, setIframeUrl }) {
               onKeyDown={e => e.key === 'Enter' && addLink()}
               dir="ltr"
             />
-            <button className="primary" onClick={addLink}>+ הוסף</button>
-          </div>
+            <button className="btn primary" onClick={addLink}>הוספת קישור</button>
+          </div>}
           <ul className="links-list">
             {links.map(link => (
               <li key={link.id} className={iframeUrl === link.url ? 'active' : ''}>
                 <button className="link-item" onClick={() => { setIframeUrl(link.url); setLoadError(false); }}>
-                  <span className="link-icon">🔗</span>
                   <span className="link-title">{link.title}</span>
                 </button>
-                <button className="link-ext ghost" title="פתח בחלון חדש" onClick={() => window.open(link.url, '_blank')}>↗</button>
-                <button className="link-remove ghost" onClick={() => deleteLink(link.id)}>✕</button>
+                <button className="text-button link-ext" onClick={() => window.open(link.url, '_blank', 'noopener')}>פתיחה</button>
+                {canEdit && <button className="text-button danger link-remove" onClick={() => deleteLink(link.id)}>הסרה</button>}
               </li>
             ))}
           </ul>
           {iframeUrl && (
             <div className="links-bottom-actions">
-              <button className="link-open-external primary" onClick={() => window.open(iframeUrl, '_blank')}>
-                ↗ פתח בחלון חדש
+              <button className="btn primary link-open-external" onClick={() => window.open(iframeUrl, '_blank', 'noopener')}>
+                פתיחה בחלון חדש
               </button>
-              <button className="link-open-external" onClick={() => { setIframeUrl(null); setLoadError(false); }}>
-                ✕ סגור תצוגה
+              <button className="btn link-open-external" onClick={() => { setIframeUrl(null); setLoadError(false); }}>
+                סגירת התצוגה
               </button>
             </div>
           )}
@@ -144,10 +115,9 @@ export default function LinksViewer({ iframeUrl, setIframeUrl }) {
             <>
               {(loadError || embedBlocked) && (
                 <div className="iframe-fallback">
-                  <span style={{ fontSize: 48 }}>🔗</span>
                   <p>האתר חוסם תצוגה מוטמעת (X-Frame-Options)</p>
                   <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>אתרים רבים כמו Canva חוסמים הטמעה מטעמי אבטחה</p>
-                  <button className="primary" onClick={() => window.open(iframeUrl, '_blank')}>↗ פתח בחלון חדש</button>
+                  <button className="btn primary" onClick={() => window.open(iframeUrl, '_blank', 'noopener')}>פתיחה בחלון חדש</button>
                 </div>
               )}
               {!embedBlocked && (
@@ -168,7 +138,6 @@ export default function LinksViewer({ iframeUrl, setIframeUrl }) {
             </>
           ) : (
             <div className="links-empty">
-              <span>🔗</span>
               <p>בחרי קישור מהרשימה לצפייה</p>
               <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
                 תומך ב-Google Docs, YouTube, ועוד · אתרים שחוסמים הטמעה ייפתחו בחלון חדש
