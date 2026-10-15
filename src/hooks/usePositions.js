@@ -60,7 +60,7 @@ export default function usePositions() {
 
   useEffect(() => {
     supabase
-      .from('positions')
+      .from('foode_positions')
       .select('*')
       .order('number')
       .then(({ data }) => {
@@ -70,7 +70,7 @@ export default function usePositions() {
 
     const channel = supabase
       .channel('positions-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'positions' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'foode_positions' }, (payload) => {
         if (payload.eventType === 'INSERT') {
           setPositions(prev => {
             if (prev.find(p => p.id === payload.new.id)) return prev;
@@ -108,7 +108,7 @@ export default function usePositions() {
     }
     if ('number' in changes) dbChanges.number = changes.number;
     setPositions(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p));
-    supabase.from('positions').update(dbChanges).eq('id', id).then();
+    supabase.from('foode_positions').update(dbChanges).eq('id', id).then();
   }, []);
 
   const add = useCallback(() => {
@@ -132,13 +132,13 @@ export default function usePositions() {
       foodTruckImageAlt: '',
     };
     setPositions(prev => [...prev, newPos]);
-    supabase.from('positions').insert(toRow(newPos)).then();
+    supabase.from('foode_positions').insert(toRow(newPos)).then();
     return id;
   }, [positions.length]);
 
   const remove = useCallback((id) => {
     setPositions(prev => prev.filter(p => p.id !== id));
-    supabase.from('positions').delete().eq('id', id).then();
+    supabase.from('foode_positions').delete().eq('id', id).then();
   }, []);
 
   const duplicate = useCallback((id) => {
@@ -151,7 +151,7 @@ export default function usePositions() {
       number: String(positions.length + 1),
       positionName: src.positionName + ' (העתק)',
     });
-    supabase.from('positions').insert(row).then();
+    supabase.from('foode_positions').insert(row).then();
   }, [positions]);
 
   return { positions, update, add, remove, duplicate, loading };
