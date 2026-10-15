@@ -1,14 +1,6 @@
 import { motion } from 'framer-motion';
 import { approvalTone, harmonicaTone } from '../utils/colors.js';
 
-const SECTIONS = [
-  ['list', 'רשימת עמדות', 'כל העמדות בטבלה אחת, עם מיון, חיפוש וכרטיס מלא לכל עמדה'],
-  ['map', 'מפת עמדות', 'מפת לוויין של אשדוד. לחיצה על סמן פותחת את כרטיס העמדה'],
-  ['report', 'דוח לטיפול', 'מה חסר בכל עמדה: תשתיות, מבנה וסביבה'],
-  ['examples', 'דוגמאות', 'דוגמאות טובות ורעות לעיצוב עמדה'],
-  ['links', 'קישורים', 'מצגות, מחברות וכלים נלווים'],
-  ['policy', 'מדיניות', 'מסמך המדיניות העירוני לעמדות מזון נייד'],
-];
 
 const rise = (i) => ({
   initial: { opacity: 0, y: 18 },
@@ -44,7 +36,6 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
     { label: 'בבדיקה', value: pending, tone: 'orange', onClick: () => filterTo('pending') },
     { label: 'לא מקובל', value: rejected, tone: 'red', onClick: () => filterTo('rejected') },
     { label: 'הרמוניקה ממתינה לאישור', value: harmonicaWaiting.length, tone: 'blue', onClick: () => filterTo('harmonica') },
-    { label: 'הערות פתוחות', value: openCorrections.length, tone: 'orange' },
   ];
 
   return (
@@ -52,13 +43,7 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
       <section className="home-hero">
         <motion.span className="mono-label" {...rise(0)}>עיריית אשדוד · מזון נייד</motion.span>
         <motion.h1 {...rise(1)}>עמדות הפודטראק של אשדוד</motion.h1>
-        <motion.p {...rise(2)}>
-          {total} עמדות ב-{complexes.length} מתחמים. כל עמדה עם כרטיס מלא: פרטים, תשתיות, הרמוניקה, מסמכים והיסטוריה.
-        </motion.p>
-        <motion.div className="home-cta" {...rise(3)}>
-          <button className="btn primary large" onClick={() => go('list')}>לרשימת העמדות</button>
-          <button className="btn large" onClick={() => go('map')}>למפה</button>
-        </motion.div>
+        <motion.p {...rise(2)}>{total} עמדות · {complexes.length} מתחמים</motion.p>
       </section>
 
       <section className="home-stats">
@@ -80,7 +65,7 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
       <div className="home-columns">
         <section className="panel home-block">
           <h2>דורש טיפול</h2>
-          {needsAttention.length === 0 ? <p className="card-empty">אין כרגע הרמוניקות ממתינות או הערות פתוחות.</p> : (
+          {needsAttention.length === 0 ? <p className="card-empty">אין</p> : (
             <ul className="attention-list">
               {needsAttention.map(p => (
                 <li key={p.id}>
@@ -116,17 +101,6 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
         </section>
       </div>
 
-      <section className="home-sections">
-        {SECTIONS.map(([id, title, desc], i) => (
-          <motion.button key={id} className="section-tile" onClick={() => go(id)} whileHover={{ y: -4 }} {...rise(10 + i)}>
-            <span className="mono-label">0{i + 1}</span>
-            <h3>{title}</h3>
-            <p>{desc}</p>
-          </motion.button>
-        ))}
-      </section>
-
-      <footer className="home-footer">עיריית אשדוד · ניהול עמדות מזון נייד · {new Date().getFullYear()}</footer>
     </div>
   );
 }

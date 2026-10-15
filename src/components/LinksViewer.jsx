@@ -86,7 +86,7 @@ export default function LinksViewer({ iframeUrl, setIframeUrl, canEdit, onError 
               onKeyDown={e => e.key === 'Enter' && addLink()}
               dir="ltr"
             />
-            <button className="btn primary" onClick={addLink}>הוספת קישור</button>
+            <button className="icon-btn add" aria-label="הוספת קישור" title="הוספת קישור" onClick={addLink}>+</button>
           </div>}
           <ul className="links-list">
             {links.map(link => (
@@ -95,7 +95,7 @@ export default function LinksViewer({ iframeUrl, setIframeUrl, canEdit, onError 
                   <span className="link-title">{link.title}</span>
                 </button>
                 <button className="text-button link-ext" onClick={() => window.open(link.url, '_blank', 'noopener')}>פתיחה</button>
-                {canEdit && <button className="text-button danger link-remove" onClick={() => deleteLink(link.id)}>הסרה</button>}
+                {canEdit && <button className="icon-btn remove link-remove" aria-label="הסרת הקישור" title="הסרה" onClick={() => deleteLink(link.id)}>×</button>}
               </li>
             ))}
           </ul>
@@ -116,7 +116,6 @@ export default function LinksViewer({ iframeUrl, setIframeUrl, canEdit, onError 
               {(loadError || embedBlocked) && (
                 <div className="iframe-fallback">
                   <p>האתר חוסם תצוגה מוטמעת (X-Frame-Options)</p>
-                  <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>אתרים רבים כמו Canva חוסמים הטמעה מטעמי אבטחה</p>
                   <button className="btn primary" onClick={() => window.open(iframeUrl, '_blank', 'noopener')}>פתיחה בחלון חדש</button>
                 </div>
               )}
@@ -139,9 +138,6 @@ export default function LinksViewer({ iframeUrl, setIframeUrl, canEdit, onError 
           ) : (
             <div className="links-empty">
               <p>בחרי קישור מהרשימה לצפייה</p>
-              <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                תומך ב-Google Docs, YouTube, ועוד · אתרים שחוסמים הטמעה ייפתחו בחלון חדש
-              </p>
             </div>
           )}
         </div>
