@@ -1,4 +1,4 @@
-export default function ActionReportPage({ positions }) {
+export default function ActionReportPage({ positions, openCard }) {
   const scorePosition = (p) => {
     let score = 0;
     if (p.approval === 'מיקום לא מקובל') score += 30;
@@ -10,6 +10,8 @@ export default function ActionReportPage({ positions }) {
     else if (p.buildingQuality === 'אין מבנה') score += 5;
     if (p.environmentQuality === 'אזהרה') score += 10;
     else if (p.environmentQuality === 'טעון שיפור') score += 5;
+    if (p.harmonicaStatus === 'נדרש תיקון') score += 10;
+    else if (p.harmonicaStatus === 'הוגשה') score += 5;
     return score;
   };
 
@@ -24,6 +26,8 @@ export default function ActionReportPage({ positions }) {
     if (p.buildingQuality === 'אין מבנה') issues.push('אין מבנה קיים');
     if (p.environmentQuality === 'אזהרה') issues.push('אזהרת איכות סביבה');
     if (p.environmentQuality === 'טעון שיפור') issues.push('סביבה טעונה שיפור');
+    if (p.harmonicaStatus === 'נדרש תיקון') issues.push('הרמוניקה דורשת תיקון');
+    if (p.harmonicaStatus === 'הוגשה') issues.push('הרמוניקה ממתינה לאישור');
     return issues;
   };
 
@@ -38,6 +42,8 @@ export default function ActionReportPage({ positions }) {
     if (p.environmentQuality === 'טעון שיפור') actions.push('לשפר איכות סביבה');
     if (p.approval === 'בבדיקה') actions.push('להשלים תהליך אישור');
     if (p.approval === 'מיקום לא מקובל') actions.push('לבדוק התאמה מחדש לאישור');
+    if (p.harmonicaStatus === 'נדרש תיקון') actions.push('לקבל מהיזם הרמוניקה מתוקנת');
+    if (p.harmonicaStatus === 'הוגשה') actions.push('לבדוק ולאשר את ההרמוניקה');
     return actions;
   };
 
@@ -70,7 +76,7 @@ export default function ActionReportPage({ positions }) {
     <section className="action-report">
       <div className="report-header-bar">
         <h2>דוח לטיפול – עמדות פודטראק</h2>
-        <button className="print-btn" onClick={() => window.print()}>הדפסה</button>
+        <button className="btn print-btn" onClick={() => window.print()}>הדפסה</button>
       </div>
 
       <div className="report-print-area">
@@ -111,7 +117,7 @@ export default function ActionReportPage({ positions }) {
               <li key={p.id} className={`report-item ${severityClass(p.score)}`}>
                 <div className="report-item-header">
                   <span className="report-item-num">{i + 1}.</span>
-                  <strong className="report-item-name">{p.positionName}</strong>
+                  <button type="button" className="report-item-name" onClick={() => openCard?.(p.id, p.harmonicaStatus === 'הוגשה' || p.harmonicaStatus === 'נדרש תיקון' ? 'harmonica' : 'details')}>{p.positionName}</button>
                   {p.complexName && <span className="report-item-complex">({p.complexName})</span>}
                   <span className={`report-severity-badge ${severityClass(p.score)}`}>
                     {severityLabel(p.score)}

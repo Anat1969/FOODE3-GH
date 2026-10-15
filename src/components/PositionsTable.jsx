@@ -1,39 +1,51 @@
-import { useState, useEffect } from 'react';
-import Chip from './Chip.jsx';
+import { useState } from 'react';
+import {
+  APPROVAL_OPTIONS, BUILDING_OPTIONS, ENV_OPTIONS,
+  approvalTone, qualityTone, harmonicaTone, withCurrent,
+} from '../utils/colors.js';
+import { isPinned } from './PositionCard.jsx';
 
-const approvalOptions = ['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל'];
-const buildingOptions = ['אין מבנה', 'יש מבנה', 'מבנה לא מקובל', 'מבנה מקובל'];
-const envOptions = ['שמורה', 'טעון שיפור', 'אזהרה'];
+function Pill({ tone, children }) {
+  return <span className={`pill ${tone}`}>{children || '—'}</span>;
+}
 
-function CheckMark({ value, onChange, editMode }) {
-  const isGood = value === 'טוב';
-  if (!editMode) {
-    return <span className={`check-mark-view ${isGood ? 'good' : 'bad'}`}>{isGood ? '✓' : '✗'}</span>;
-  }
+function InfraCell({ value, onChange, editing }) {
+  const good = value === 'טוב';
+  if (!editing) return <Pill tone={good ? 'green' : 'red'}>{good ? 'תקין' : 'חסר'}</Pill>;
   return (
     <button
-      className={`check-mark ${isGood ? 'good' : 'bad'}`}
-      onClick={(e) => { e.stopPropagation(); onChange(isGood ? 'לא טוב' : 'טוב'); }}
+      type="button"
+      className={`pill button ${good ? 'green' : 'red'}`}
+      onClick={(e) => { e.stopPropagation(); onChange(good ? 'לא טוב' : 'טוב'); }}
     >
-      {isGood ? '✓' : '✗'}
+      {good ? 'תקין' : 'חסר'}
     </button>
   );
 }
 
-function InlineSelect({ value, onChange, options, type }) {
+function InlineSelect({ value, onChange, options, tone }) {
   return (
-    <select className={`inline-select ${type || ''}`} value={value} onChange={e => onChange(e.target.value)}>
-      {options.map(o => <option key={o}>{o}</option>)}
+    <select
+      className={`inline-select tone-${tone(value)}`}
+      value={value || ''}
+      onClick={e => e.stopPropagation()}
+      onChange={e => onChange(e.target.value)}
+    >
+      {withCurrent(options, value).map(o => <option key={o} value={o}>{o}</option>)}
     </select>
   );
 }
 
+function InlineInput({ value, onChange }) {
+  return <input className="inline-input" value={value || ''} onClick={e => e.stopPropagation()} onChange={e => onChange(e.target.value)} />;
+}
+
 const VALUE_RANK = {
   'טוב': 0, 'לא טוב': 1,
-  'יש': 0, 'אין': 1,
   'מיקום מקובל': 0, 'בבדיקה': 1, 'מיקום לא מקובל': 2,
   'מבנה מקובל': 0, 'יש מבנה': 1, 'מבנה לא מקובל': 2, 'אין מבנה': 3,
   'שמורה': 0, 'טעון שיפור': 1, 'אזהרה': 2,
+  'מאושרת': 0, 'הוגשה': 1, 'נדרש תיקון': 2, 'לא הוגשה': 3,
 };
 
 function compareValues(a, b) {
@@ -49,109 +61,85 @@ function compareValues(a, b) {
 const COLUMNS = [
   { key: 'number', label: 'מספר', group: 'זיהוי' },
   { key: 'foodTruckImageUrl', label: 'תמונה', sortable: false, group: 'זיהוי' },
-  { key: '_pin', label: 'מפה', sortable: false, group: 'זיהוי' },
+  { key: '_pin', label: 'מיקום', sortable: false, group: 'זיהוי' },
   { key: 'complexName', label: 'שם מתחם', group: 'זיהוי' },
   { key: 'positionName', label: 'שם עמדה', group: 'זיהוי' },
-  { key: 'businessName', label: 'שם עסק', group: 'פרטי עסק' },
-  { key: 'ownerName', label: 'שם בעלים', group: 'פרטי עסק' },
+  { key: 'businessName', label: 'שם עסק', group: 'עסק' },
+  { key: 'ownerName', label: 'שם בעלים', group: 'עסק' },
   { key: 'water', label: 'מים', group: 'תשתיות' },
   { key: 'electricity', label: 'חשמל', group: 'תשתיות' },
   { key: 'sewage', label: 'ביוב', group: 'תשתיות' },
   { key: 'buildingQuality', label: 'עיצוב המבנה', group: 'איכות' },
   { key: 'environmentQuality', label: 'איכות הסביבה', group: 'איכות' },
   { key: 'approval', label: 'סטטוס מיקום', group: 'סטטוס' },
+  { key: 'harmonicaStatus', label: 'הרמוניקה', group: 'סטטוס' },
   { key: 'notes', label: 'הערות', group: 'סטטוס' },
 ];
 
-function buildColGroups(columns) {
-  const groups = [];
-  let current = null;
-  for (const col of columns) {
-    if (current && current.name === col.group) {
-      current.span++;
-    } else {
-      current = { name: col.group, span: 1 };
-      groups.push(current);
-    }
-  }
+const COL_GROUPS = COLUMNS.reduce((groups, col) => {
+  const last = groups[groups.length - 1];
+  if (last && last.name === col.group) last.span++;
+  else groups.push({ name: col.group, span: 1 });
   return groups;
-}
+}, []);
 
-const COL_GROUPS = buildColGroups(COLUMNS);
-
-const FILTER_LABELS = { approved: 'מיקום מקובל', pending: 'בבדיקה', rejected: 'מיקום לא מקובל', all: 'כל העמדות' };
+const FILTER_LABELS = { approved: 'מיקום מקובל', pending: 'בבדיקה', rejected: 'מיקום לא מקובל', all: 'כל העמדות', complexes: 'כל העמדות', harmonica: 'הרמוניקה ממתינה' };
 
 const SEARCH_HISTORY_KEY = 'foode3-search-history';
 function loadSearchHistory() {
   try { return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); } catch { return []; }
 }
-function saveSearchHistory(list) {
-  localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(list.slice(0, 10)));
-}
 
-export default function PositionsTable({ positions, allPositions, update, add, remove, selectedId, setSelectedId, setPage, setPinningId, editMode, statsFilter, onClearFilter }) {
+export default function PositionsTable({
+  positions, allPositions, update, changeApproval, add, selectedId, openCard,
+  editing, canEdit, statsFilter, onClearFilter, openCorrectionsById,
+}) {
   const [sortCol, setSortCol] = useState('number');
   const [sortAsc, setSortAsc] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchHistory, setSearchHistory] = useState(loadSearchHistory);
-  const goPin = (id) => { setSelectedId(id); setPinningId(id); setPage('map'); };
 
   const handleSort = (key) => {
-    if (key === sortCol) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortCol(key);
-      setSortAsc(true);
-    }
+    if (key === sortCol) setSortAsc(!sortAsc);
+    else { setSortCol(key); setSortAsc(true); }
   };
 
   const commitSearch = (term) => {
-    if (!term.trim()) return;
-    const history = [term.trim(), ...searchHistory.filter(h => h !== term.trim())].slice(0, 10);
+    const t = term.trim();
+    if (!t) return;
+    const history = [t, ...searchHistory.filter(h => h !== t)].slice(0, 10);
     setSearchHistory(history);
-    saveSearchHistory(history);
+    try { localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history)); } catch { /* ignore */ }
   };
 
-  const matchesSearch = (row) => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.trim().toLowerCase();
-    const fields = [row.number, row.positionName, row.complexName, row.businessName, row.ownerName, row.water, row.electricity, row.sewage, row.buildingQuality, row.environmentQuality, row.approval, row.notes];
-    return fields.some(f => (f || '').toLowerCase().includes(term));
-  };
-
-  const filtered = positions.filter(matchesSearch);
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = !term ? positions : positions.filter(row =>
+    [row.number, row.positionName, row.complexName, row.businessName, row.ownerName, row.developerName,
+      row.buildingQuality, row.environmentQuality, row.approval, row.harmonicaStatus, row.notes]
+      .some(f => String(f || '').toLowerCase().includes(term)));
 
   const sorted = [...filtered].sort((a, b) => {
     const cmp = compareValues(a[sortCol], b[sortCol]);
     return sortAsc ? cmp : -cmp;
   });
 
-  const approvalClass = (val) => val === 'מיקום מקובל' ? 'green' : val === 'בבדיקה' ? 'orange' : 'red';
-
   return (
-    <section className="table-shell glass-panel">
+    <section className="table-shell panel">
       <div className="section-title">
         <div>
           <h2>רשימת עמדות</h2>
-          <p>{editMode ? 'מצב עריכה – לחצי על שדות לעריכה' : 'מצב תצוגה – לחצי על עמדה לפרטים'}</p>
+          <p>{editing ? 'עריכה ישירה בטבלה. לחיצה על שורה פותחת את כרטיס העמדה.' : 'לחיצה על עמדה, תמונה או מיקום פותחת את כרטיס העמדה.'}</p>
           {statsFilter && (
             <div className="filter-badge">
-              מסנן: {FILTER_LABELS[statsFilter]} ({positions.length} מתוך {allPositions?.length || positions.length})
-              <button className="ghost filter-clear" onClick={onClearFilter}>✕ נקה</button>
+              מסנן: {FILTER_LABELS[statsFilter]} ({positions.length} מתוך {allPositions.length})
+              <button className="text-button" onClick={onClearFilter}>ניקוי</button>
             </div>
           )}
         </div>
         <div className="actions">
-          <button className="search-toggle" onClick={() => setSearchOpen(!searchOpen)} title="חיפוש">
-            🔍 חיפוש
-          </button>
-          {editMode && (
-            <>
-              <button className="primary" onClick={() => setSelectedId(add())}>+ הוספת עמדה</button>
-              <button onClick={() => selectedId && remove(selectedId)}>מחיקה</button>
-            </>
-          )}
+          <button className="btn" onClick={() => setSearchOpen(!searchOpen)} aria-expanded={searchOpen}>חיפוש</button>
+          {canEdit && <button className="btn primary" onClick={() => openCard(add(), 'details', true)}>הוספת עמדה</button>}
         </div>
       </div>
 
@@ -159,21 +147,17 @@ export default function PositionsTable({ positions, allPositions, update, add, r
         <div className="table-search-bar">
           <input
             className="table-search-input"
-            placeholder="חיפוש לפי מילת מפתח..."
+            placeholder="חיפוש לפי מילת מפתח"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && commitSearch(searchTerm)}
             autoFocus
           />
-          {searchTerm && (
-            <span className="table-search-count">{filtered.length} תוצאות</span>
-          )}
-          <button className="ghost" onClick={() => { setSearchOpen(false); setSearchTerm(''); }}>✕</button>
+          {searchTerm && <span className="table-search-count">{filtered.length} תוצאות</span>}
+          <button className="text-button" onClick={() => { setSearchOpen(false); setSearchTerm(''); }}>סגירה</button>
           {searchHistory.length > 0 && !searchTerm && (
             <div className="search-history">
-              {searchHistory.map((h, i) => (
-                <button key={i} className="search-history-item" onClick={() => setSearchTerm(h)}>{h}</button>
-              ))}
+              {searchHistory.map(h => <button key={h} className="search-history-item" onClick={() => setSearchTerm(h)}>{h}</button>)}
             </div>
           )}
         </div>
@@ -183,60 +167,67 @@ export default function PositionsTable({ positions, allPositions, update, add, r
         <table>
           <thead>
             <tr className="col-group-row">
-              {COL_GROUPS.map((g, i) => (
-                <th key={i} colSpan={g.span} className="col-group-header">{g.name}</th>
-              ))}
+              {COL_GROUPS.map(g => <th key={g.name} colSpan={g.span} className="col-group-header">{g.name}</th>)}
             </tr>
             <tr>
               {COLUMNS.map(col => (
                 <th
                   key={col.key}
-                  className={col.sortable === false ? '' : 'sortable'}
+                  className={`${col.sortable === false ? '' : 'sortable'} ${sortCol === col.key ? (sortAsc ? 'sorted asc' : 'sorted desc') : ''}`}
+                  aria-sort={sortCol === col.key ? (sortAsc ? 'ascending' : 'descending') : undefined}
                   onClick={col.sortable === false ? undefined : () => handleSort(col.key)}
                 >
                   {col.label}
-                  {sortCol === col.key && <span className="sort-arrow">{sortAsc ? ' ▲' : ' ▼'}</span>}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {sorted.map(row => (
-              <tr key={row.id} className={`${selectedId === row.id ? 'selected' : ''} approval-${approvalClass(row.approval)}`} onClick={() => setSelectedId(row.id)}>
-                <td>{row.number}</td>
-                <td>{row.foodTruckImageUrl ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb empty">—</span>}</td>
-                <td>
-                  {(row.mapPin && (Math.abs(row.mapPin.x - 34.6415) > 0.0001 || Math.abs(row.mapPin.y - 31.8014) > 0.0001))
-                    ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📌 נעוץ</span>
-                    : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button>}
-                </td>
-                <td>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>
-                <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
-                <td>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>
-                <td>{editMode ? <input value={row.ownerName || ''} onChange={e => update(row.id, { ownerName: e.target.value })} /> : row.ownerName || '—'}</td>
-                <td><CheckMark value={row.water} editMode={editMode} onChange={v => update(row.id, { water: v })} /></td>
-                <td><CheckMark value={row.electricity} editMode={editMode} onChange={v => update(row.id, { electricity: v })} /></td>
-                <td><CheckMark value={row.sewage} editMode={editMode} onChange={v => update(row.id, { sewage: v })} /></td>
-                <td>
-                  {editMode
-                    ? <InlineSelect value={row.buildingQuality} options={buildingOptions} onChange={v => update(row.id, { buildingQuality: v })} />
-                    : <Chip value={row.buildingQuality} />}
-                </td>
-                <td>
-                  {editMode
-                    ? <InlineSelect value={row.environmentQuality} options={envOptions} onChange={v => update(row.id, { environmentQuality: v })} />
-                    : <Chip value={row.environmentQuality} />}
-                </td>
-                <td>
-                  {editMode ? (
-                    <InlineSelect value={row.approval} options={approvalOptions} type="status" onChange={v => update(row.id, { approval: v, status: v })} />
-                  ) : (
-                    <span className={`approval-light ${approvalClass(row.approval)}`}>{row.approval}</span>
-                  )}
-                </td>
-                <td>{editMode ? <input value={row.notes || ''} onChange={e => update(row.id, { notes: e.target.value })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>
-              </tr>
-            ))}
+            {sorted.map(row => {
+              const open = (tab = 'details') => openCard(row.id, tab);
+              const corrections = openCorrectionsById[row.id] || 0;
+              return (
+                <tr
+                  key={row.id}
+                  className={`${selectedId === row.id ? 'selected' : ''} row-${approvalTone(row.approval)}`}
+                  onClick={() => open()}
+                  tabIndex={0}
+                  onKeyDown={e => { if (e.key === 'Enter' && e.target === e.currentTarget) open(); }}
+                >
+                  <td className="mono-cell">{editing ? <InlineInput value={row.number} onChange={v => update(row.id, { number: v })} /> : row.number}</td>
+                  <td>
+                    {row.foodTruckImageUrl
+                      ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} loading="lazy" />
+                      : <span className="thumb empty" />}
+                  </td>
+                  <td>
+                    <span className={`pill ${isPinned(row.mapPin) ? 'green' : 'gray'}`}>{isPinned(row.mapPin) ? 'על המפה' : 'לא סומן'}</span>
+                  </td>
+                  <td>{editing ? <InlineInput value={row.complexName} onChange={v => update(row.id, { complexName: v })} /> : row.complexName}</td>
+                  <td className="col-name">{editing ? <InlineInput value={row.positionName} onChange={v => update(row.id, { positionName: v })} /> : <strong>{row.positionName}</strong>}</td>
+                  <td>{editing ? <InlineInput value={row.businessName} onChange={v => update(row.id, { businessName: v })} /> : row.businessName || '—'}</td>
+                  <td>{editing ? <InlineInput value={row.ownerName} onChange={v => update(row.id, { ownerName: v })} /> : row.ownerName || '—'}</td>
+                  <td><InfraCell value={row.water} editing={editing} onChange={v => update(row.id, { water: v })} /></td>
+                  <td><InfraCell value={row.electricity} editing={editing} onChange={v => update(row.id, { electricity: v })} /></td>
+                  <td><InfraCell value={row.sewage} editing={editing} onChange={v => update(row.id, { sewage: v })} /></td>
+                  <td>{editing
+                    ? <InlineSelect value={row.buildingQuality} options={BUILDING_OPTIONS} tone={qualityTone} onChange={v => update(row.id, { buildingQuality: v })} />
+                    : <Pill tone={qualityTone(row.buildingQuality)}>{row.buildingQuality}</Pill>}</td>
+                  <td>{editing
+                    ? <InlineSelect value={row.environmentQuality} options={ENV_OPTIONS} tone={qualityTone} onChange={v => update(row.id, { environmentQuality: v })} />
+                    : <Pill tone={qualityTone(row.environmentQuality)}>{row.environmentQuality}</Pill>}</td>
+                  <td>{editing
+                    ? <InlineSelect value={row.approval} options={APPROVAL_OPTIONS} tone={approvalTone} onChange={v => changeApproval(row.id, v)} />
+                    : <Pill tone={approvalTone(row.approval)}>{row.approval}</Pill>}</td>
+                  <td>
+                    <button type="button" className={`pill button ${harmonicaTone(row.harmonicaStatus)}`} onClick={e => { e.stopPropagation(); open('harmonica'); }}>
+                      {row.harmonicaStatus || 'לא הוגשה'}{corrections ? ` · ${corrections} הערות` : ''}
+                    </button>
+                  </td>
+                  <td>{editing ? <InlineInput value={row.notes} onChange={v => update(row.id, { notes: v })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

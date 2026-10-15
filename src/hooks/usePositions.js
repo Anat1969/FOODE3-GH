@@ -1,162 +1,161 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase.js';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase, write } from '../supabase.js';
 
-function toRow(p) {
-  return {
-    id: p.id,
-    number: p.number,
-    position_name: p.positionName ?? p.position_name,
-    complex_name: p.complexName ?? p.complex_name,
-    business_name: p.businessName ?? p.business_name,
-    water: p.water,
-    electricity: p.electricity,
-    sewage: p.sewage,
-    business_license: p.businessLicense ?? p.business_license,
-    traffic: p.traffic,
-    waste: p.waste,
-    accessibility: p.accessibility,
-    lighting: p.lighting,
-    building_quality: p.buildingQuality ?? p.building_quality,
-    environment_quality: p.environmentQuality ?? p.environment_quality,
-    approval: p.approval,
-    status: p.status,
-    notes: p.notes ?? '',
-    map_pin_x: p.mapPin?.x ?? p.map_pin_x ?? 50,
-    map_pin_y: p.mapPin?.y ?? p.map_pin_y ?? 50,
-    food_truck_image_url: p.foodTruckImageUrl ?? p.food_truck_image_url ?? '',
-    food_truck_image_alt: p.foodTruckImageAlt ?? p.food_truck_image_alt ?? '',
-    owner_name: p.ownerName ?? p.owner_name ?? '',
-  };
+export const ASHDOD_CENTER = { x: 34.6415, y: 31.8014 };
+
+// camelCase field -> db column
+const FIELD_MAP = {
+  number: 'number',
+  positionName: 'position_name',
+  complexName: 'complex_name',
+  businessName: 'business_name',
+  ownerName: 'owner_name',
+  water: 'water',
+  electricity: 'electricity',
+  sewage: 'sewage',
+  buildingQuality: 'building_quality',
+  environmentQuality: 'environment_quality',
+  approval: 'approval',
+  status: 'status',
+  notes: 'notes',
+  foodTruckImageUrl: 'food_truck_image_url',
+  foodTruckImageAlt: 'food_truck_image_alt',
+  developerName: 'developer_name',
+  developerEmail: 'developer_email',
+  developerPhone: 'developer_phone',
+  harmonicaStatus: 'harmonica_status',
+  harmonicaApprovedAt: 'harmonica_approved_at',
+  harmonicaApprovedBy: 'harmonica_approved_by',
+};
+
+function toDb(changes) {
+  const out = {};
+  for (const [k, v] of Object.entries(changes)) {
+    if (k === 'mapPin') {
+      out.map_pin_x = v.x;
+      out.map_pin_y = v.y;
+    } else if (FIELD_MAP[k]) {
+      out[FIELD_MAP[k]] = k === 'harmonicaApprovedAt' && !v ? null : v;
+    }
+  }
+  return out;
 }
 
-function fromRow(r) {
-  return {
-    id: r.id,
-    number: r.number,
-    positionName: r.position_name,
-    complexName: r.complex_name,
-    businessName: r.business_name,
-    water: r.water,
-    electricity: r.electricity,
-    sewage: r.sewage,
-    businessLicense: r.business_license,
-    traffic: r.traffic,
-    waste: r.waste,
-    accessibility: r.accessibility,
-    lighting: r.lighting,
-    buildingQuality: r.building_quality,
-    environmentQuality: r.environment_quality,
-    approval: r.approval,
-    status: r.status,
-    notes: r.notes,
-    mapPin: { x: r.map_pin_x, y: r.map_pin_y },
-    foodTruckImageUrl: r.food_truck_image_url,
-    foodTruckImageAlt: r.food_truck_image_alt,
-    ownerName: r.owner_name || '',
-  };
+export function fromRow(r) {
+  const p = { id: r.id, mapPin: { x: r.map_pin_x, y: r.map_pin_y }, updatedAt: r.updated_at };
+  for (const [k, col] of Object.entries(FIELD_MAP)) p[k] = r[col] ?? '';
+  return p;
 }
 
-export default function usePositions() {
+const byNumber = (a, b) => Number(a.number) - Number(b.number) || String(a.number).localeCompare(String(b.number));
+
+export default function usePositions({ onError } = {}) {
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saveState, setSaveState] = useState({ pending: 0, at: null, error: null });
+  const pendingRef = useRef({}); // id -> { changes, timer }
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.from('foode_positions').select('*');
+    if (!error && data) setPositions(data.map(fromRow).sort(byNumber));
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    supabase
-      .from('positions')
-      .select('*')
-      .order('number')
-      .then(({ data }) => {
-        if (data) setPositions(data.map(fromRow));
-        setLoading(false);
-      });
-
+    load();
     const channel = supabase
-      .channel('positions-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'positions' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setPositions(prev => {
-            if (prev.find(p => p.id === payload.new.id)) return prev;
-            return [...prev, fromRow(payload.new)].sort((a, b) => Number(a.number) - Number(b.number));
-          });
-        } else if (payload.eventType === 'UPDATE') {
-          setPositions(prev => prev.map(p => p.id === payload.new.id ? fromRow(payload.new) : p));
-        } else if (payload.eventType === 'DELETE') {
-          setPositions(prev => prev.filter(p => p.id !== payload.old.id));
+      .channel('foode-positions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'foode_positions' }, ({ eventType, new: row, old }) => {
+        if (eventType === 'DELETE' || row?.deleted_at) {
+          const id = old?.id || row?.id;
+          setPositions(prev => prev.filter(p => p.id !== id));
+          return;
         }
+        if (pendingRef.current[row.id]) return; // local edits in flight win
+        setPositions(prev => {
+          const next = prev.some(p => p.id === row.id)
+            ? prev.map(p => (p.id === row.id ? fromRow(row) : p))
+            : [...prev, fromRow(row)];
+          return next.sort(byNumber);
+        });
       })
       .subscribe();
+    // Removals are not pushed to other viewers, so refresh when the tab comes back.
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const update = useCallback((id, changes) => {
-    const dbChanges = {};
-    if ('positionName' in changes) dbChanges.position_name = changes.positionName;
-    if ('complexName' in changes) dbChanges.complex_name = changes.complexName;
-    if ('businessName' in changes) dbChanges.business_name = changes.businessName;
-    if ('water' in changes) dbChanges.water = changes.water;
-    if ('electricity' in changes) dbChanges.electricity = changes.electricity;
-    if ('sewage' in changes) dbChanges.sewage = changes.sewage;
-    if ('buildingQuality' in changes) dbChanges.building_quality = changes.buildingQuality;
-    if ('environmentQuality' in changes) dbChanges.environment_quality = changes.environmentQuality;
-    if ('approval' in changes) dbChanges.approval = changes.approval;
-    if ('status' in changes) dbChanges.status = changes.status;
-    if ('notes' in changes) dbChanges.notes = changes.notes;
-    if ('foodTruckImageUrl' in changes) dbChanges.food_truck_image_url = changes.foodTruckImageUrl;
-    if ('foodTruckImageAlt' in changes) dbChanges.food_truck_image_alt = changes.foodTruckImageAlt;
-    if ('ownerName' in changes) dbChanges.owner_name = changes.ownerName;
-    if ('mapPin' in changes) {
-      dbChanges.map_pin_x = changes.mapPin.x;
-      dbChanges.map_pin_y = changes.mapPin.y;
+  const flush = useCallback(async (id) => {
+    const entry = pendingRef.current[id];
+    if (!entry) return;
+    delete pendingRef.current[id];
+    try {
+      await write('positions', 'upsert', id, toDb(entry.changes));
+      setSaveState(s => ({ pending: Math.max(0, s.pending - 1), at: new Date(), error: null }));
+    } catch (err) {
+      setSaveState(s => ({ pending: Math.max(0, s.pending - 1), at: s.at, error: err.message }));
+      onErrorRef.current?.(err);
+      load();
     }
-    if ('number' in changes) dbChanges.number = changes.number;
-    setPositions(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p));
-    supabase.from('positions').update(dbChanges).eq('id', id).then();
-  }, []);
+  }, [load]);
+
+  // Optimistic local update, debounced save per position.
+  const update = useCallback((id, changes) => {
+    setPositions(prev => prev.map(p => (p.id === id ? { ...p, ...changes } : p)));
+    const entry = pendingRef.current[id];
+    if (entry) {
+      clearTimeout(entry.timer);
+      entry.changes = { ...entry.changes, ...changes };
+    } else {
+      pendingRef.current[id] = { changes: { ...changes } };
+      setSaveState(s => ({ ...s, pending: s.pending + 1 }));
+    }
+    pendingRef.current[id].timer = setTimeout(() => flush(id), 450);
+  }, [flush]);
 
   const add = useCallback(() => {
     const id = crypto.randomUUID();
+    const maxNum = positions.reduce((m, p) => Math.max(m, Number(p.number) || 0), 0);
     const newPos = {
       id,
-      number: String(positions.length + 1),
+      number: String(maxNum + 1),
       positionName: 'עמדה חדשה',
       complexName: '',
       businessName: '',
+      ownerName: '',
       water: 'טוב',
       electricity: 'טוב',
       sewage: 'טוב',
-      ownerName: '',
       buildingQuality: 'אין מבנה',
       environmentQuality: 'שמורה',
       approval: 'בבדיקה',
       status: 'בבדיקה',
       notes: '',
-      mapPin: { x: 34.6415, y: 31.8014 },
       foodTruckImageUrl: '',
       foodTruckImageAlt: '',
+      developerName: '',
+      developerEmail: '',
+      developerPhone: '',
+      harmonicaStatus: 'לא הוגשה',
+      harmonicaApprovedAt: '',
+      harmonicaApprovedBy: '',
+      mapPin: { ...ASHDOD_CENTER },
     };
-    setPositions(prev => [...prev, newPos]);
-    supabase.from('positions').insert(toRow(newPos)).then();
+    setPositions(prev => [...prev, newPos].sort(byNumber));
+    write('positions', 'upsert', id, toDb(newPos)).catch(err => { onErrorRef.current?.(err); load(); });
     return id;
-  }, [positions.length]);
+  }, [positions, load]);
 
   const remove = useCallback((id) => {
     setPositions(prev => prev.filter(p => p.id !== id));
-    supabase.from('positions').delete().eq('id', id).then();
-  }, []);
+    write('positions', 'remove', id).catch(err => { onErrorRef.current?.(err); load(); });
+  }, [load]);
 
-  const duplicate = useCallback((id) => {
-    const src = positions.find(p => p.id === id);
-    if (!src) return;
-    const newId = crypto.randomUUID();
-    const row = toRow({
-      ...src,
-      id: newId,
-      number: String(positions.length + 1),
-      positionName: src.positionName + ' (העתק)',
-    });
-    supabase.from('positions').insert(row).then();
-  }, [positions]);
-
-  return { positions, update, add, remove, duplicate, loading };
+  return { positions, update, add, remove, loading, saveState };
 }

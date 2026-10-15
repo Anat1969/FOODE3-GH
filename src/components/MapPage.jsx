@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { statusColor } from '../utils/colors.js';
+import { approvalTone } from '../utils/colors.js';
+import { isPinned } from './PositionCard.jsx';
 import maplibregl from 'maplibre-gl';
 
 const ASHDOD_CENTER = [34.6415, 31.8014];
-const STATUS_COLORS = { green: '#34a853', orange: '#fbbc04', red: '#ea4335' };
-
-function isPinned(mapPin) {
-  if (!mapPin) return false;
-  return Math.abs(mapPin.x - ASHDOD_CENTER[0]) > 0.0001 || Math.abs(mapPin.y - ASHDOD_CENTER[1]) > 0.0001;
-}
+const STATUS_COLORS = { green: '#3fb46a', orange: '#e9b23c', red: '#e5534b', gray: '#9aa0a6' };
 
 function createMarkerEl(name, color, isSelected, pinned) {
   const wrapper = document.createElement('div');
@@ -40,7 +36,7 @@ function createMarkerEl(name, color, isSelected, pinned) {
   return wrapper;
 }
 
-export default function MapPage({ positions, update, selectedId, setSelectedId, pinningId, setPinningId }) {
+export default function MapPage({ positions, update, selectedId, openCard, pinningId, setPinningId, onPinned, focusId, canEdit }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef({});
@@ -96,9 +92,11 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     });
 
     const clickHandler = (e) => {
-      update(pinningRef.current, { mapPin: { x: e.lngLat.lng, y: e.lngLat.lat } });
+      const id = pinningRef.current;
+      update(id, { mapPin: { x: e.lngLat.lng, y: e.lngLat.lat } });
       setPinningId(null);
       setCursorCoord(null);
+      onPinned?.(id);
     };
 
     const moveHandler = (e) => {
@@ -118,7 +116,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       map.off('mousemove', moveHandler);
       map.getCanvas().style.cursor = '';
     };
-  }, [pinningId, update, setPinningId]);
+  }, [pinningId, update, setPinningId, onPinned]);
 
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
@@ -134,7 +132,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     positions.forEach(p => {
       const lng = p.mapPin?.x ?? ASHDOD_CENTER[0];
       const lat = p.mapPin?.y ?? ASHDOD_CENTER[1];
-      const color = STATUS_COLORS[statusColor(p.approval)] || STATUS_COLORS.orange;
+      const color = STATUS_COLORS[approvalTone(p.approval)] || STATUS_COLORS.gray;
       const isSelected = selectedId === p.id;
       const pinned = isPinned(p.mapPin);
 
@@ -148,8 +146,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       }
 
       const el = createMarkerEl(p.positionName, color, isSelected, pinned);
-      const clickTarget = el.querySelector('.map-marker-pin') || el.querySelector('.map-marker-dot');
-      clickTarget.addEventListener('click', (ev) => { ev.stopPropagation(); setSelectedId(p.id); });
+      el.addEventListener('click', (ev) => { ev.stopPropagation(); openCard(p.id); });
 
       if (pinningRef.current) {
         el.style.pointerEvents = 'none';
@@ -160,18 +157,24 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
         .addTo(mapRef.current);
       markersRef.current[p.id] = { marker, key };
     });
-  }, [positions, selectedId, mapReady, setSelectedId]);
+  }, [positions, selectedId, mapReady, openCard]);
 
-  const selected = positions.find(p => p.id === selectedId);
+  // Fly to a position when asked from its card.
+  useEffect(() => {
+    if (!mapReady || !focusId) return;
+    const p = positions.find(x => x.id === focusId);
+    if (p && isPinned(p.mapPin)) mapRef.current.flyTo({ center: [p.mapPin.x, p.mapPin.y], zoom: 17, duration: 900 });
+  }, [focusId, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const pinningName = pinningId ? positions.find(p => p.id === pinningId)?.positionName : null;
 
   return (
-    <section className="map-page glass-panel">
+    <section className="map-page panel">
       <div className="map-header">
         {pinningId && (
           <div className="pinning-banner">
-            מסמנים את <strong>{pinningName}</strong> – לחצי על המפה למיקום הפודטראק
-            <button className="ghost pinning-cancel" onClick={() => { setPinningId(null); setCursorCoord(null); }}>ביטול</button>
+            מסמנים את <strong>{pinningName}</strong>. לחיצה על המפה קובעת את מיקום הפודטראק.
+            <button className="btn small" onClick={() => { const id = pinningId; setPinningId(null); setCursorCoord(null); onPinned?.(id); }}>ביטול</button>
           </div>
         )}
       </div>
@@ -187,30 +190,10 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
               </div>
             </div>
           )}
-          {selected && !pinningId && (
-          <div className="map-info-card">
-            {selected.foodTruckImageUrl && (
-              <div className="map-info-image">
-                <img src={selected.foodTruckImageUrl} alt={selected.foodTruckImageAlt || selected.positionName} />
-              </div>
-            )}
-            <h3>{selected.positionName}</h3>
-            <p>{selected.complexName} · {selected.businessName}</p>
-            <div className="map-info-row">
-              <span className={`check-mark-small ${selected.water === 'טוב' ? 'good' : 'bad'}`}>{selected.water === 'טוב' ? '✓' : '✗'} מים</span>
-              <span className={`check-mark-small ${selected.electricity === 'טוב' ? 'good' : 'bad'}`}>{selected.electricity === 'טוב' ? '✓' : '✗'} חשמל</span>
-              <span className={`check-mark-small ${selected.sewage === 'טוב' ? 'good' : 'bad'}`}>{selected.sewage === 'טוב' ? '✓' : '✗'} ביוב</span>
-            </div>
-            <div className="map-info-status">
-              <span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span>
-            </div>
-            {isPinned(selected.mapPin) && <p className="map-info-coords">📌 {selected.mapPin.x.toFixed(5)}, {selected.mapPin.y.toFixed(5)}</p>}
-            <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>📍 סמן מיקום על המפה</button>
-          </div>
-        )}
         </div>
       </div>
       <div className="map-legend">
+        <span className="map-hint">לחיצה על סמן פותחת את כרטיס העמדה</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מיקום מקובל</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> מיקום לא מקובל</span>

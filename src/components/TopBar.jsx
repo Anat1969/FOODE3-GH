@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+export const DEV_CHAT_URL = 'https://claude.ai/code/session_01ELjmgCtCVbBT1AstY1Wrrk';
 
 const DEFAULT_TABS = [
   ['list', 'רשימת עמדות'],
@@ -6,7 +8,8 @@ const DEFAULT_TABS = [
   ['report', 'דוח לטיפול'],
   ['examples', 'דוגמאות'],
   ['links', 'קישורים'],
-  ['policy', '📜 מדיניות'],
+  ['policy', 'מדיניות'],
+  ['settings', 'הגדרות'],
 ];
 
 const ORDER_KEY = 'foode3-tab-order';
@@ -15,90 +18,104 @@ function loadOrder() {
   try {
     const saved = JSON.parse(localStorage.getItem(ORDER_KEY));
     if (Array.isArray(saved) && saved.length) return saved;
-  } catch {}
+  } catch { /* ignore */ }
   return null;
 }
 
-export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode, onShowPolicy }) {
+function SaveIndicator({ saveState, editor }) {
+  if (!editor) return <span className="save-indicator"><i className="dot gray" />תצוגה בלבד</span>;
+  if (saveState.error) return <span className="save-indicator error"><i className="dot red" />השמירה נכשלה</span>;
+  if (saveState.pending) return <span className="save-indicator"><i className="dot orange" />שומר…</span>;
+  return (
+    <span className="save-indicator">
+      <i className="dot green" />נשמר{saveState.at ? ` ${saveState.at.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}` : ''}
+    </span>
+  );
+}
+
+export default function TopBar({ page, go, editor, editMode, setEditMode, saveState, onCopyLink, canInstall, onInstall }) {
   const [tabOrder, setTabOrder] = useState(() => loadOrder() || DEFAULT_TABS.map(t => t[0]));
   const [dragId, setDragId] = useState(null);
+  const ref = useRef(null);
 
   useEffect(() => {
-    localStorage.setItem(ORDER_KEY, JSON.stringify(tabOrder));
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(tabOrder)); } catch { /* ignore */ }
   }, [tabOrder]);
 
-  const orderedTabs = tabOrder
-    .map(id => DEFAULT_TABS.find(t => t[0] === id))
-    .filter(Boolean);
+  // Exposes the bar height so cards and overlays open below it.
+  useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      document.documentElement.style.setProperty('--topbar-h', `${Math.ceil(entry.target.getBoundingClientRect().height)}px`);
+    });
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
 
-  const missingTabs = DEFAULT_TABS.filter(t => !tabOrder.includes(t[0]));
-  const allTabs = [...orderedTabs, ...missingTabs];
-
-  const handleTabClick = (id) => {
-    setPage(id);
-  };
-
-  const handleDragStart = (e, id) => {
-    setDragId(id);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
+  const allTabs = [
+    ...tabOrder.map(id => DEFAULT_TABS.find(t => t[0] === id)).filter(Boolean),
+    ...DEFAULT_TABS.filter(t => !tabOrder.includes(t[0])),
+  ];
+  const canDrag = editor && editMode;
 
   const handleDrop = (e, targetId) => {
     e.preventDefault();
     if (!dragId || dragId === targetId) return;
     setTabOrder(prev => {
-      const order = [...prev];
-      const fromIdx = order.indexOf(dragId);
-      const toIdx = order.indexOf(targetId);
-      if (fromIdx === -1 || toIdx === -1) return prev;
-      order.splice(fromIdx, 1);
-      order.splice(toIdx, 0, dragId);
+      const order = allTabs.map(t => t[0]);
+      const from = order.indexOf(dragId);
+      const to = order.indexOf(targetId);
+      if (from === -1 || to === -1) return prev;
+      order.splice(from, 1);
+      order.splice(to, 0, dragId);
       return order;
     });
     setDragId(null);
   };
 
   return (
-    <header className="topbar glass-panel">
-      <div className="top-line">
-        <div className="userbox">
-          <button className="icon-button" aria-label="תפריט">☰</button>
-          <div className="avatar">●</div>
-          <span>שלום, מנהל מערכת</span>
-        </div>
-        <h1 className="topbar-logo" onClick={() => setPage('landing')} title="חזרה לדף הבית">מערכת ניהול עמדות פודטראק – אשדוד</h1>
-        <div className="save-indicator"><span className="dot green" /> נשמר בזמן אמת {lastSaved && `· ${lastSaved}`}</div>
-        <div className="traffic-lights"><i/><i/><i/></div>
-      </div>
-      <div className="tabs-row">
-        <nav className="tabs">
-          {allTabs.map(([id, label]) => (
-            <button
-              key={id}
-              className={`${(id === 'policy' ? false : page === id) ? 'active' : ''} ${id === 'policy' ? 'policy-tab' : ''}`}
-              onClick={() => handleTabClick(id)}
-              draggable={editMode}
-              onDragStart={editMode ? (e) => handleDragStart(e, id) : undefined}
-              onDragOver={editMode ? handleDragOver : undefined}
-              onDrop={editMode ? (e) => handleDrop(e, id) : undefined}
-              style={editMode ? { cursor: 'grab' } : undefined}
-            >
-              {editMode && <span className="drag-hint">⠿</span>}
-              {label}
+    <header className="topbar" ref={ref}>
+      <div className="topbar-row">
+        <a
+          className="brand"
+          href="/"
+          onClick={e => { e.preventDefault(); go('home'); }}
+          title="דף הבית"
+        >
+          <img src="/icon-192.png" alt="" className="brand-mark" width="32" height="32" />
+          <span className="brand-text">
+            <span className="brand-name">פודטראק אשדוד</span>
+            <span className="brand-sub">ניהול עמדות</span>
+          </span>
+        </a>
+        <div className="topbar-tools">
+          <SaveIndicator saveState={saveState} editor={editor} />
+          {editor && (
+            <button className={`btn small ${editMode ? 'primary' : ''}`} onClick={() => setEditMode(!editMode)} title="עריכה ישירה בטבלה">
+              {editMode ? 'מצב עריכה' : 'מצב תצוגה'}
             </button>
-          ))}
-        </nav>
-        <div className="tabs-actions">
-          <button className={`edit-toggle ${editMode ? 'active' : ''}`} onClick={() => setEditMode(!editMode)}>
-            {editMode ? '✏️ מצב עריכה' : '👁️ מצב תצוגה'}
-          </button>
+          )}
+          <button className="btn small" onClick={onCopyLink}>העתקת קישור</button>
+          <a className="btn small" href={DEV_CHAT_URL} target="_blank" rel="noreferrer">שיחת הפיתוח</a>
+          {canInstall && <button className="btn small" onClick={onInstall}>התקנת האפליקציה</button>}
         </div>
       </div>
+      <nav className="tabs" aria-label="ניווט ראשי">
+        {allTabs.map(([id, label]) => (
+          <button
+            key={id}
+            className={page === id ? 'active' : ''}
+            aria-current={page === id ? 'page' : undefined}
+            onClick={() => go(id)}
+            draggable={canDrag}
+            onDragStart={canDrag ? (e) => { setDragId(id); e.dataTransfer.effectAllowed = 'move'; } : undefined}
+            onDragOver={canDrag ? (e) => e.preventDefault() : undefined}
+            onDrop={canDrag ? (e) => handleDrop(e, id) : undefined}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 }
