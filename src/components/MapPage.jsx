@@ -193,7 +193,6 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
         </div>
       </div>
       <div className="map-legend">
-        <span className="map-hint">לחיצה על סמן פותחת את כרטיס העמדה</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מיקום מקובל</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
         <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> מיקום לא מקובל</span>

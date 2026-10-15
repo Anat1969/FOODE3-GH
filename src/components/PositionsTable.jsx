@@ -35,6 +35,21 @@ function SelectCell({ value, onChange, options, tone, canEdit }) {
   );
 }
 
+// Text cell: plain text for viewers, an in-place input for editors (does not open the card).
+function TextCell({ value, onChange, canEdit, strong, className = '' }) {
+  if (!canEdit) return strong ? <strong>{value || '—'}</strong> : <span className={className}>{value || '—'}</span>;
+  return (
+    <input
+      className={`cell-input ${strong ? 'strong' : ''} ${className}`}
+      value={value || ''}
+      placeholder="—"
+      onClick={stop}
+      onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') e.currentTarget.blur(); }}
+      onChange={e => onChange(e.target.value)}
+    />
+  );
+}
+
 const VALUE_RANK = {
   'טוב': 0, 'לא טוב': 1,
   'מיקום מקובל': 0, 'בבדיקה': 1, 'מיקום לא מקובל': 2,
@@ -129,7 +144,6 @@ export default function PositionsTable({
       <div className="section-title">
         <div>
           <h2>רשימת עמדות</h2>
-          <p>{canEdit ? 'סטטוסים ותשתיות נערכים ישירות בטבלה. לחיצה על שורה פותחת את כרטיס העמדה.' : 'לחיצה על עמדה, תמונה או מיקום פותחת את כרטיס העמדה.'}</p>
           {statsFilter && (
             <div className="filter-badge">
               מסנן: {FILTER_LABELS[statsFilter] || statsFilter.replace('complex:', 'מתחם ')} ({positions.length} מתוך {allPositions.length})
@@ -149,7 +163,7 @@ export default function PositionsTable({
             />
             {term && <span className="table-search-count">{filtered.length} תוצאות</span>}
           </div>
-          {canEdit && <button className="btn primary" onClick={() => openCard(add(), 'details')}>הוספת עמדה</button>}
+          {canEdit && <button className="icon-btn add large" aria-label="הוספת עמדה" title="הוספת עמדה" onClick={() => openCard(add(), 'details')}>+</button>}
         </div>
       </div>
 
@@ -203,17 +217,17 @@ export default function PositionsTable({
                       tabIndex={0}
                       onKeyDown={e => { if (e.key === 'Enter' && e.target === e.currentTarget) open(); }}
                     >
-                      <td className="mono-cell">{row.number}</td>
+                      <td className="mono-cell"><TextCell canEdit={canEdit} className="num" value={row.number} onChange={v => update(row.id, { number: v })} /></td>
                       <td>
                         {row.foodTruckImageUrl
                           ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} loading="lazy" />
                           : <span className="thumb empty" />}
                       </td>
                       <td><span className={`pill ${isPinned(row.mapPin) ? 'green' : 'gray'}`}>{isPinned(row.mapPin) ? 'על המפה' : 'לא סומן'}</span></td>
-                      <td>{row.complexName || '—'}</td>
-                      <td className="col-name"><strong>{row.positionName}</strong></td>
-                      <td className={b('businessName')}>{row.businessName || '—'}</td>
-                      <td>{row.ownerName || '—'}</td>
+                      <td><TextCell canEdit={canEdit} value={row.complexName} onChange={v => update(row.id, { complexName: v })} /></td>
+                      <td className="col-name"><TextCell canEdit={canEdit} strong value={row.positionName} onChange={v => update(row.id, { positionName: v })} /></td>
+                      <td className={b('businessName')}><TextCell canEdit={canEdit} value={row.businessName} onChange={v => update(row.id, { businessName: v })} /></td>
+                      <td><TextCell canEdit={canEdit} value={row.ownerName} onChange={v => update(row.id, { ownerName: v })} /></td>
                       <td className={b('water')}><InfraCell value={row.water} canEdit={canEdit} onChange={v => update(row.id, { water: v })} /></td>
                       <td><InfraCell value={row.electricity} canEdit={canEdit} onChange={v => update(row.id, { electricity: v })} /></td>
                       <td><InfraCell value={row.sewage} canEdit={canEdit} onChange={v => update(row.id, { sewage: v })} /></td>
@@ -225,7 +239,7 @@ export default function PositionsTable({
                           {row.harmonicaStatus || 'לא הוגשה'}{corrections ? ` · ${corrections} הערות` : ''}
                         </button>
                       </td>
-                      <td><span className="notes-text">{row.notes || '—'}</span></td>
+                      <td><TextCell canEdit={canEdit} className="notes-text" value={row.notes} onChange={v => update(row.id, { notes: v })} /></td>
                     </tr>
                   );
                 })}

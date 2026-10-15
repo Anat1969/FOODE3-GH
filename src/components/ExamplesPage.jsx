@@ -34,14 +34,14 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
           <img src={item.imageUrl} alt={item.title || 'דוגמה'} className="example-image" />
         ) : (
           <div className="example-image-placeholder">
-            {editMode ? 'לחצי להעלאת תמונה' : 'אין תמונה'}
+            {''}
           </div>
         )}
         {editMode && (
           <>
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={handleImage} />
-            <button className="example-upload-btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? 'מעלה…' : 'תמונה'}
+            <button className="example-upload-btn" aria-label="העלאת תמונה" title="העלאת תמונה" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              {uploading ? '…' : '+'}
             </button>
             {uploadError && <div className="upload-error" style={{ position: 'absolute', bottom: 2, right: 2, fontSize: 11 }}>{uploadError}</div>}
           </>
@@ -55,21 +55,13 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
               value={draft.title}
               onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
               onBlur={() => commit('title')}
-              placeholder="כותרת..."
+              placeholder="כותרת"
             />
-            <textarea
-              className="example-desc-input"
-              value={draft.description}
-              onChange={e => setDraft(d => ({ ...d, description: e.target.value }))}
-              onBlur={() => commit('description')}
-              placeholder="הסבר..."
-            />
-            <button className="btn danger example-delete" onClick={() => { if (window.confirm('להסיר את הדוגמה?')) onDelete(); }}>הסרה</button>
+            <button className="icon-btn remove example-delete" aria-label="הסרת הדוגמה" title="הסרה" onClick={() => { if (window.confirm('להסיר את הדוגמה?')) onDelete(); }}>×</button>
           </>
         ) : (
           <>
             <h4 className="example-title">{item.title || 'ללא כותרת'}</h4>
-            <p className="example-desc">{item.description || ''}</p>
           </>
         )}
       </div>
@@ -97,10 +89,10 @@ export default function ExamplesPage({ editMode, onError }) {
         <div className="examples-column good">
           <div className="examples-col-header good">
             <h3>דוגמאות טובות</h3>
-            {editMode && <button className="btn primary examples-add" onClick={() => addExample('good')}>הוספה</button>}
+            {editMode && <button className="icon-btn add examples-add" aria-label="הוספת דוגמה טובה" title="הוספה" onClick={() => addExample('good')}>+</button>}
           </div>
           <div className="examples-grid">
-            {good.length === 0 && <p className="muted examples-empty">{editMode ? 'לחצי "הוספה" כדי להוסיף דוגמה טובה' : 'אין דוגמאות'}</p>}
+            {good.length === 0 && <p className="muted examples-empty">אין</p>}
             {good.map(ex => (
               <ExampleCard
                 key={ex.id}
@@ -116,10 +108,10 @@ export default function ExamplesPage({ editMode, onError }) {
         <div className="examples-column bad">
           <div className="examples-col-header bad">
             <h3>דוגמאות רעות</h3>
-            {editMode && <button className="btn primary examples-add" onClick={() => addExample('bad')}>הוספה</button>}
+            {editMode && <button className="icon-btn add examples-add" aria-label="הוספת דוגמה רעה" title="הוספה" onClick={() => addExample('bad')}>+</button>}
           </div>
           <div className="examples-grid">
-            {bad.length === 0 && <p className="muted examples-empty">{editMode ? 'לחצי "הוספה" כדי להוסיף דוגמה רעה' : 'אין דוגמאות'}</p>}
+            {bad.length === 0 && <p className="muted examples-empty">אין</p>}
             {bad.map(ex => (
               <ExampleCard
                 key={ex.id}

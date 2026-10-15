@@ -4,8 +4,7 @@ import ImageUpload from './ImageUpload.jsx';
 import { uploadFile } from '../supabase.js';
 import { ASHDOD_CENTER } from '../hooks/usePositions.js';
 import {
-  APPROVAL_OPTIONS, BUILDING_OPTIONS, ENV_OPTIONS, HARMONICA_OPTIONS,
-  approvalTone, qualityTone, harmonicaTone, withCurrent,
+  APPROVAL_OPTIONS, BUILDING_OPTIONS, ENV_OPTIONS,   approvalTone, qualityTone, harmonicaTone, withCurrent,
 } from '../utils/colors.js';
 
 export const CARD_TABS = [
@@ -167,7 +166,7 @@ function DocDropzone({ label, busy, onFiles, onLink }) {
       <div className="link-row" onPaste={e => e.stopPropagation()}>
         <input className="inline-field boxed" dir="ltr" placeholder="https://" value={link} onChange={e => setLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLink()} />
         <input className="inline-field boxed" placeholder="שם הקישור (לא חובה)" value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLink()} />
-        <button type="button" className="btn" disabled={!link.trim()} onClick={addLink}>הוספת קישור</button>
+        <button type="button" className="icon-btn add" aria-label="הוספת קישור" title="הוספת קישור" disabled={!link.trim()} onClick={addLink}>+</button>
       </div>
       <input
         ref={inputRef}
@@ -177,6 +176,20 @@ function DocDropzone({ label, busy, onFiles, onLink }) {
         accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.dwg,.dxf,.zip,image/*"
         onChange={e => { const files = [...(e.target.files || [])]; e.target.value = ''; if (files.length) onFiles(files); }}
       />
+    </div>
+  );
+}
+
+// Done mark strikes the text through; × removes (restorable in the database).
+function ItemActions({ done, onToggle, onRemove }) {
+  return (
+    <div className="item-actions">
+      {onToggle && (
+        <button type="button" className={`icon-btn done ${done ? 'on' : ''}`} aria-pressed={done} aria-label={done ? 'סימון כלא הושלם' : 'הושלם'} title={done ? 'סימון כלא הושלם' : 'הושלם'} onClick={onToggle}>
+          ✓
+        </button>
+      )}
+      {onRemove && <button type="button" className="icon-btn remove" aria-label="הסרה" title="הסרה" onClick={onRemove}>×</button>}
     </div>
   );
 }
@@ -196,7 +209,7 @@ function DocList({ docs, canEdit, onRemove, onRename, numbered }) {
           </div>
           <div className="doc-actions">
             <a className="btn small" href={d.file_url} target="_blank" rel="noreferrer">פתיחה</a>
-            {canEdit && <button type="button" className="text-button danger" onClick={() => onRemove(d)}>הסרה</button>}
+            {canEdit && <ItemActions onRemove={() => onRemove(d)} />}
           </div>
         </li>
       ))}
@@ -316,10 +329,6 @@ export default function PositionCard({
     logEvent('email', `נשלח מייל ליזם (${p.developerEmail})${openCorrections.length ? ` עם ${openCorrections.length} הערות לתיקון` : ''}`, { to: p.developerEmail, corrections: openCorrections.map(c => c.id) });
   };
 
-  const copyCardLink = async () => {
-    try { await navigator.clipboard.writeText(cardLink(tab)); notify('הקישור לכרטיס הועתק'); }
-    catch { notify('לא ניתן להעתיק אוטומטית', 'error'); }
-  };
 
   const tabCount = { docs: generalDocs.length, history: history.length, harmonica: openCorrections.length };
 
@@ -346,7 +355,6 @@ export default function PositionCard({
           </div>
         </div>
         <div className="card-head-actions">
-          <button type="button" className="btn small" onClick={copyCardLink}>העתקת קישור לכרטיס</button>
           <button type="button" className="btn small ghost" onClick={onClose}>סגירה</button>
         </div>
       </header>
@@ -394,8 +402,7 @@ export default function PositionCard({
                 <Field label="טלפון היזם"><EditText canEdit={canEdit} value={p.developerPhone} onChange={set('developerPhone')} dir="ltr" type="tel" placeholder="050-0000000" /></Field>
               </div>
 
-              <h3 className="card-subtitle">הערות</h3>
-              <Field label="הערות כלליות" wide><EditText canEdit={canEdit} value={p.notes} onChange={set('notes')} multiline placeholder="הערות כלליות לעמדה" /></Field>
+              <Field label="הערות" wide><EditText canEdit={canEdit} value={p.notes} onChange={set('notes')} multiline placeholder="הערות כלליות לעמדה" /></Field>
 
               <h3 className="card-subtitle">מיקום</h3>
               <div className="card-location">
@@ -446,6 +453,7 @@ export default function PositionCard({
                 </div>
                 {canEdit && (
                   <div className="approve-toggle" role="group" aria-label="האם ההרמוניקה מאושרת">
+                    <button type="button" className="btn small email-btn" onClick={emailDeveloper} title={p.developerEmail || 'חסר דוא"ל יזם'}>מייל ליזם</button>
                     <span className="card-label">מאושרת?</span>
                     <div className="segmented large">
                       <button type="button" className={p.harmonicaStatus === 'מאושרת' ? 'on green' : ''} onClick={() => setHarmonica('מאושרת')}>כן, מאושרת</button>
@@ -455,17 +463,6 @@ export default function PositionCard({
                 )}
               </div>
 
-              {canEdit && (
-                <div className="card-grid">
-                  <Field label="שלב">
-                    <EditSelect canEdit value={p.harmonicaStatus} options={HARMONICA_OPTIONS} tone={harmonicaTone} onChange={setHarmonica} />
-                  </Field>
-                  <div className="card-field action-field">
-                    <span className="card-label">יזם: {p.developerName || 'לא הוזן'}{p.developerEmail ? ` · ${p.developerEmail}` : ''}</span>
-                    <button type="button" className="btn" onClick={emailDeveloper}>שליחת מייל ליזם</button>
-                  </div>
-                </div>
-              )}
 
               <h3 className="card-subtitle">קבצי הרמוניקה</h3>
               {canEdit && <DocDropzone label="העלאת הרמוניקה" busy={uploading === 'harmonica'} onFiles={f => uploadDocs(f, 'harmonica')} onLink={(u, t) => addLinkDoc(u, t, 'harmonica')} />}
@@ -473,28 +470,32 @@ export default function PositionCard({
 
               <div className="card-subhead">
                 <h3 className="card-subtitle">הערות לתיקון</h3>
-                <span className="mono-label">{openCorrections.length} פתוחות · {corrections.length - openCorrections.length} טופלו</span>
+                {corrections.length > 0 && <span className="mono-label">{openCorrections.length} פתוחות · {corrections.length - openCorrections.length} הושלמו</span>}
               </div>
               {canEdit && (
                 <div className="note-composer">
-                  <textarea className="inline-field boxed" rows={3} value={newCorrection} placeholder="הערה חדשה לתיקון ההרמוניקה" onChange={e => setNewCorrection(e.target.value)} />
-                  <button type="button" className="btn primary" disabled={!newCorrection.trim()} onClick={addCorrection}>הוספת הערה</button>
+                  <textarea className="inline-field boxed" rows={2} value={newCorrection} placeholder="הערה חדשה לתיקון ההרמוניקה" onChange={e => setNewCorrection(e.target.value)} />
+                  <button type="button" className="icon-btn add" aria-label="הוספת הערה" title="הוספת הערה" disabled={!newCorrection.trim()} onClick={addCorrection}>+</button>
                 </div>
               )}
               {corrections.length === 0 ? <p className="card-empty">אין הערות לתיקון.</p> : (
                 <ul className="correction-list">
                   {corrections.map(c => (
                     <li key={c.id} className={c.resolved ? 'resolved' : ''}>
-                      <DraftText canEdit={canEdit} multiline value={c.body} onSave={body => saveEvent(c.id, { body }).catch(() => {})} />
-                      <div className="correction-meta">
-                        <EditDate canEdit={canEdit} value={c.created_at} onSave={v => saveEvent(c.id, { created_at: v }).catch(() => {})} />
-                        {c.author && <span>{c.author}</span>}
-                        {canEdit ? (
-                          <button type="button" className={`pill button ${c.resolved ? 'green' : 'orange'}`} onClick={() => saveEvent(c.id, { resolved: !c.resolved }).catch(() => {})}>
-                            {c.resolved ? 'טופלה' : 'פתוחה'}
-                          </button>
-                        ) : <Pill tone={c.resolved ? 'green' : 'orange'}>{c.resolved ? 'טופלה' : 'פתוחה'}</Pill>}
+                      <div className="item-main">
+                        <DraftText canEdit={canEdit} multiline value={c.body} onSave={body => saveEvent(c.id, { body }).catch(() => {})} />
+                        <div className="correction-meta">
+                          <EditDate canEdit={canEdit} value={c.created_at} onSave={v => saveEvent(c.id, { created_at: v }).catch(() => {})} />
+                          {c.author && <span>{c.author}</span>}
+                        </div>
                       </div>
+                      {canEdit && (
+                        <ItemActions
+                          done={c.resolved}
+                          onToggle={() => saveEvent(c.id, { resolved: !c.resolved }).catch(() => {})}
+                          onRemove={() => removeEvent(c.id)}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -507,7 +508,6 @@ export default function PositionCard({
               <h3 className="card-subtitle">מסמכים כלליים</h3>
               {canEdit && <DocDropzone label="העלאת מסמכים" busy={uploading === 'general'} onFiles={f => uploadDocs(f, 'general')} onLink={(u, t) => addLinkDoc(u, t, 'general')} />}
               <DocList docs={generalDocs} canEdit={canEdit} onRemove={d => removeDoc(d.id)} onRename={renameDoc} />
-              <p className="card-hint">קבצי ההרמוניקה מרוכזים בלשונית הרמוניקה.</p>
             </div>
           )}
 
@@ -515,18 +515,15 @@ export default function PositionCard({
             <div className="card-section">
               {canEdit && (
                 <div className="note-composer dated">
-                  <label className="card-field compact">
-                    <span className="card-label">תאריך</span>
-                    <input type="date" className="date-field" value={noteDate} onChange={e => setNoteDate(e.target.value || toDateInput())} />
-                  </label>
+                  <input type="date" className="date-field" aria-label="תאריך" value={noteDate} onChange={e => setNoteDate(e.target.value || toDateInput())} />
                   <textarea className="inline-field boxed" rows={2} value={newNote} placeholder="רישום חדש ביומן העמדה" onChange={e => setNewNote(e.target.value)} />
-                  <button type="button" className="btn primary" disabled={!newNote.trim()} onClick={addNote}>הוספה ליומן</button>
+                  <button type="button" className="icon-btn add" aria-label="הוספה ליומן" title="הוספה ליומן" disabled={!newNote.trim()} onClick={addNote}>+</button>
                 </div>
               )}
               {history.length === 0 ? <p className="card-empty">אין עדיין רישומים.</p> : (
                 <ol className="timeline">
                   {history.map(e => (
-                    <li key={e.id} className={`kind-${e.kind}`}>
+                    <li key={e.id} className={`kind-${e.kind} ${e.resolved ? 'resolved' : ''}`}>
                       <span className="timeline-dot" />
                       <div className="timeline-body">
                         <div className="timeline-head">
@@ -536,8 +533,12 @@ export default function PositionCard({
                         </div>
                         <DraftText canEdit={canEdit && (e.kind === 'note' || e.kind === 'correction')} multiline value={e.body} onSave={body => saveEvent(e.id, { body }).catch(() => {})} />
                       </div>
-                      {canEdit && e.kind === 'note' && (
-                        <button type="button" className="text-button danger" onClick={() => removeEvent(e.id)}>הסרה</button>
+                      {canEdit && (
+                        <ItemActions
+                          done={e.resolved}
+                          onToggle={() => saveEvent(e.id, { resolved: !e.resolved }).catch(() => {})}
+                          onRemove={() => removeEvent(e.id)}
+                        />
                       )}
                     </li>
                   ))}

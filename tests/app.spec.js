@@ -61,7 +61,13 @@ async function mockSupabase(page, { editor = true } = {}) {
       const body = req.postDataJSON();
       writes.push(body);
       if (!editor) return json({ message: 'not_authorized', code: '42501' }, 403);
-      return json({ id: body.p_id, ...body.p_data, created_at: new Date().toISOString() });
+      // Like foode_write: upsert merges into the stored row and returns all of it
+      const list = tables[`foode_${body.p_table}`] || (tables[`foode_${body.p_table}`] = []);
+      let row = list.find(r => r.id === body.p_id);
+      if (!row) { row = { id: body.p_id, created_at: new Date().toISOString() }; list.push(row); }
+      if (body.p_op === 'remove') row.deleted_at = new Date().toISOString();
+      else Object.assign(row, body.p_data);
+      return json(row);
     }
     if (url.pathname.startsWith('/functions/v1/foode-upload')) {
       const body = req.postDataJSON();
@@ -143,7 +149,7 @@ test('row, image and location open the card; card is linkable', async ({ page })
   await mockSupabase(page);
   await page.goto('/?p=list');
   const row = page.locator('tbody tr').first();
-  await row.locator('td').nth(4).click();
+  await row.locator('td').nth(2).click();
   await expect(page.locator('.position-card')).toBeVisible();
   await expect(page).toHaveURL(/pos=00000000-0000-4000-8000-000000000001/);
   for (const tab of ['תשתיות ואיכות', 'הרמוניקה', 'מסמכים', 'היסטוריה', 'פרטים']) {
@@ -175,8 +181,7 @@ test('editing in the card saves through the guarded write', async ({ page }) => 
   expect(w.p_data.developer_name).toBe('יוסי');
   expect(w.p_op).toBe('upsert');
   await expect(page.locator('.card-title-input')).toHaveValue('עמדה מעודכנת');
-  await page.getByRole('button', { name: 'העתקת קישור לכרטיס' }).click();
-  await expect(page.locator('.toast').last()).toHaveText('הקישור לכרטיס הועתק');
+  await expect(page.getByRole('button', { name: 'העתקת קישור לכרטיס' })).toHaveCount(0);
 
   await page.locator('.card-field', { hasText: 'סטטוס מיקום' }).locator('select').selectOption('מיקום לא מקובל');
   await expect.poll(() => writes.find(w2 => w2.p_table === 'position_events' && w2.p_data.kind === 'status')).toBeTruthy();
@@ -195,10 +200,14 @@ test('harmonica: corrections, approval, email and documents', async ({ page }) =
   await expect.poll(() => writes.find(w => w.p_data.kind === 'correction' && w.p_data.body === 'להוסיף פרט הצללה')).toBeTruthy();
   await expect(page.locator('.correction-list li')).toHaveCount(2);
 
-  await page.locator('.correction-list li').last().getByRole('button', { name: 'פתוחה' }).click();
+  const original = page.locator('.correction-list li').last();
+  await original.getByRole('button', { name: 'הושלם', exact: true }).click();
   await expect.poll(() => writes.find(w => w.p_id === 'e1' && w.p_data.resolved === true)).toBeTruthy();
+  await expect(original).toHaveClass(/resolved/);
+  expect(await original.locator('textarea').evaluate(el => getComputedStyle(el).textDecorationLine)).toContain('line-through');
+  await original.screenshot({ path: 'test-results/resolved-item.png' });
 
-  await page.getByRole('button', { name: 'שליחת מייל ליזם' }).click();
+  await page.getByRole('button', { name: 'מייל ליזם' }).click();
   await expect.poll(() => writes.find(w => w.p_data.kind === 'email')).toBeTruthy();
   expect(writes.find(w => w.p_data.kind === 'email').p_data.meta.to).toBe('dana@example.com');
 
@@ -230,6 +239,10 @@ test('harmonica: corrections, approval, email and documents', async ({ page }) =
   await page.getByRole('button', { name: 'הוספה ליומן' }).click();
   await expect.poll(() => writes.find(w => w.p_data.body === 'שיחה עם היזם')?.p_data.created_at || '').toMatch(/^2026-09-0[12]/);
   await expect(page.locator('.timeline')).toContainText('שיחה עם היזם');
+  const entry = page.locator('.timeline li', { hasText: 'שיחה עם היזם' });
+  await entry.getByRole('button', { name: 'הסרה' }).click();
+  await expect.poll(() => writes.find(w => w.p_table === 'position_events' && w.p_op === 'remove')).toBeTruthy();
+  await expect(page.locator('.timeline')).not.toContainText('שיחה עם היזם');
 
   // Link instead of a file
   await page.locator('.card-tabs').getByRole('tab', { name: /מסמכים/ }).click();
@@ -247,6 +260,7 @@ test('view-only visitors see the card but cannot edit', async ({ page }) => {
   await expect(page.locator('.position-card .inline-field')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'כן, מאושרת' })).toHaveCount(0);
   await expect(page.locator('.dropzone')).toHaveCount(0);
+  await expect(page.locator('.icon-btn')).toHaveCount(0);
   await expect(page.locator('.position-card').getByText('תצוגה בלבד')).toBeVisible();
   expect(writes).toHaveLength(0);
 });
@@ -287,6 +301,14 @@ test('table edit mode, legacy values stay visible and readable', async ({ page }
   await expect(page.locator('tbody.row-group')).toHaveCount(0);
   await page.locator('tbody tr').first().locator('.pill.button.toggle').first().click();
   await expect.poll(() => writes.find(w => w.p_data.water)).toBeTruthy();
+
+  // Text fields edit in place in the table without opening the card
+  const nameCell = page.locator('tbody tr').first().locator('.cell-input.strong');
+  await nameCell.fill('שם מהטבלה');
+  await expect(page.locator('.position-card')).toHaveCount(0);
+  await expect.poll(() => writes.find(w => w.p_data.position_name === 'שם מהטבלה')).toBeTruthy();
+  await page.locator('tbody tr').first().locator('.cell-input.notes-text').fill('הערה מהטבלה');
+  await expect.poll(() => writes.find(w => w.p_data.notes === 'הערה מהטבלה')).toBeTruthy();
   for (const theme of ['dark', 'light']) {
     await page.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
     await page.waitForTimeout(450);
