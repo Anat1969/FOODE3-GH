@@ -49,7 +49,6 @@ export default function App() {
   const [statsFilter, setStatsFilter] = useState(initial.filter);
   const [pinningId, setPinningId] = useState(null);
   const [focusId, setFocusId] = useState(null);
-  const [editMode, setEditMode] = useState(false);
   const [editor, setEditor] = useState(null);
   const [theme, setTheme] = useState(readTheme);
   const [iframeUrl, setIframeUrl] = useState(null);
@@ -151,14 +150,6 @@ export default function App() {
     openCard(id, 'details');
   }, [openCard]);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      notify('הקישור הועתק');
-    } catch {
-      notify('לא ניתן להעתיק אוטומטית. אפשר להעתיק מסרגל הכתובת.', 'error');
-    }
-  };
 
   const install = async () => {
     if (!installEvent) return;
@@ -193,7 +184,6 @@ export default function App() {
     return url.toString();
   }, [page, cardId]);
 
-  const tableEditing = Boolean(editor) && editMode;
 
   return (
     <div className="app-shell">
@@ -201,12 +191,7 @@ export default function App() {
         page={page}
         go={go}
         editor={editor}
-        editMode={editMode}
-        setEditMode={setEditMode}
         saveState={saveState}
-        onCopyLink={copyLink}
-        canInstall={Boolean(installEvent)}
-        onInstall={install}
       />
 
       {loading ? (
@@ -225,7 +210,6 @@ export default function App() {
                 add={add}
                 selectedId={cardId}
                 openCard={openCard}
-                editing={tableEditing}
                 canEdit={Boolean(editor)}
                 statsFilter={statsFilter}
                 onClearFilter={() => setStatsFilter(null)}
@@ -247,10 +231,10 @@ export default function App() {
             />
           )}
           {page === 'report' && <ActionReportPage positions={positions} openCard={openCard} />}
-          {page === 'examples' && <ExamplesPage editMode={tableEditing} canEdit={Boolean(editor)} onError={onError} />}
+          {page === 'examples' && <ExamplesPage editMode={Boolean(editor)} onError={onError} />}
           {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} canEdit={Boolean(editor)} onError={onError} />}
           {page === 'policy' && <PolicyViewer />}
-          {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} editor={editor} onEditorChange={setEditor} />}
+          {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} editor={editor} onEditorChange={setEditor} notify={notify} canInstall={Boolean(installEvent)} onInstall={install} />}
         </main>
       )}
 
