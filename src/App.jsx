@@ -53,7 +53,6 @@ export default function App() {
   const [theme, setTheme] = useState(readTheme);
   const [iframeUrl, setIframeUrl] = useState(null);
   const [toasts, setToasts] = useState([]);
-  const [installEvent, setInstallEvent] = useState(null);
   const skipPush = useRef(true);
 
   const notify = useCallback((text, kind = 'ok') => {
@@ -93,17 +92,6 @@ export default function App() {
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
-
-  useEffect(() => {
-    const onPrompt = (e) => { e.preventDefault(); setInstallEvent(e); };
-    const onInstalled = () => setInstallEvent(null);
-    window.addEventListener('beforeinstallprompt', onPrompt);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
   }, []);
 
   const go = useCallback((p) => {
@@ -151,13 +139,6 @@ export default function App() {
   }, [openCard]);
 
 
-  const install = async () => {
-    if (!installEvent) return;
-    installEvent.prompt();
-    await installEvent.userChoice.catch(() => null);
-    setInstallEvent(null);
-  };
-
   const filteredPositions = useMemo(() => {
     if (!statsFilter) return positions;
     if (statsFilter.startsWith('complex:')) {
@@ -192,6 +173,7 @@ export default function App() {
         go={go}
         editor={editor}
         saveState={saveState}
+        onEditorChange={setEditor}
       />
 
       {loading ? (
@@ -234,7 +216,7 @@ export default function App() {
           {page === 'examples' && <ExamplesPage editMode={Boolean(editor)} onError={onError} />}
           {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} canEdit={Boolean(editor)} onError={onError} />}
           {page === 'policy' && <PolicyViewer />}
-          {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} editor={editor} onEditorChange={setEditor} notify={notify} canInstall={Boolean(installEvent)} onInstall={install} />}
+          {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} editor={editor} />}
         </main>
       )}
 
