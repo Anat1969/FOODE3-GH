@@ -25,6 +25,10 @@ export function getEditorKey() {
   try { return localStorage.getItem(KEY_STORAGE) || ''; } catch { return ''; }
 }
 
+export function setEditorKey(key) {
+  try { localStorage.setItem(KEY_STORAGE, key); } catch { /* storage blocked: editing stays off */ }
+}
+
 export function clearEditorKey() {
   try { localStorage.removeItem(KEY_STORAGE); } catch { /* ignore */ }
 }

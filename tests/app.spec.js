@@ -50,6 +50,8 @@ async function mockSupabase(page, { editor = true } = {}) {
   };
 
   if (editor) await page.addInitScript(() => localStorage.setItem('foode3-editor-key', 'test-key'));
+  // The A&I logo button comes from the portfolio app; AI_MENU_JS can point to a local copy.
+  if (process.env.AI_MENU_JS) await page.route('https://appofapp-gh.vercel.app/ai-menu.js', r => r.fulfill({ path: process.env.AI_MENU_JS, contentType: 'application/javascript' }));
   await page.route(/fonts\.(googleapis|gstatic)\.com|arcgisonline\.com/, r => r.abort());
   await page.route(`${SB}/**`, async (route) => {
     const req = route.request();
@@ -138,11 +140,13 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
   await page.locator('.brand').click();
   await expect(page.getByRole('heading', { name: 'עמדות הפודטראק של אשדוד' })).toBeVisible();
 
-  await page.locator('.tabs').getByRole('button', { name: 'הגדרות' }).click();
-  await expect(page.getByRole('link', { name: 'שיחת הפיתוח' })).toHaveAttribute('href', /claude\.ai\/code\/session_/);
-  await expect(page.getByRole('link', { name: 'פרויקט המחקר' })).toHaveAttribute('href', /claude\.ai\/project\/019e3627/);
-  await page.getByRole('button', { name: 'העתקת קישור' }).click();
-  await expect(page.locator('.toast')).toHaveText('הקישור לאפליקציה הועתק');
+  await expect(page.locator('.topbar ai-menu .logo')).toBeVisible();
+  await page.locator('ai-menu .logo').click();
+  await expect(page.locator('ai-menu a.item', { hasText: 'שיחת הפיתוח' })).toHaveAttribute('href', /claude\.ai\/code\/session_/);
+  await expect(page.locator('ai-menu a.item', { hasText: 'פרויקט המחקר' })).toHaveAttribute('href', /claude\.ai\/project\/019e3627/);
+  await expect(page.locator('ai-menu .item', { hasText: 'ניתוק המכשיר מהעריכה' })).toBeVisible();
+  await page.locator('ai-menu .item', { hasText: 'העתקת קישור' }).click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain('localhost');
 });
 
 test('row, image and location open the card; card is linkable', async ({ page }) => {
