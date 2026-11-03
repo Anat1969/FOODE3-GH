@@ -3,5 +3,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  // Vercel serves from the root; GitHub Pages builds with BASE_PATH=/FOODE3-GH/.
+  base: process.env.BASE_PATH || '/',
 });
