@@ -1,5 +1,7 @@
 // Pages from the network (fresh data), static assets and images from the cache.
-const CACHE = 'foode3-v1';
+const CACHE = 'foode3-v2';
+// The app shell lives at the scope root: / on Vercel, /FOODE3-GH/ on GitHub Pages.
+const SHELL = self.registration.scope;
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
@@ -19,9 +21,9 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(req).then(res => {
         const copy = res.clone();
-        caches.open(CACHE).then(c => c.put('/', copy));
+        caches.open(CACHE).then(c => c.put(SHELL, copy));
         return res;
-      }).catch(() => caches.match('/'))
+      }).catch(() => caches.match(SHELL))
     );
     return;
   }

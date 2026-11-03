@@ -947,3 +947,74 @@ td .pill-select, .pill-select { padding: 4px 10px 4px 22px; background-position:
 .cell-input { min-width: 110px; }
 .cell-input.strong { min-width: 130px; }
 .cell-input.notes-text { min-width: 140px; }
+
+/* Load error: never an endless spinner */
+.load-error { max-width: 560px; margin: 12vh auto 0; padding: 28px 28px 24px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: 0 18px 40px -24px rgba(0,0,0,0.5); display: grid; gap: 10px; justify-items: start; }
+.load-error-what { font-size: 22px; font-weight: 600; color: var(--red); margin: 0; }
+.load-error-fix { margin: 0 0 6px; color: var(--text); }
+.load-error-code { margin: 4px 0 0; word-break: break-word; }
+
+/* Hours map (מפה לפי שעה) */
+.map-view-switch { align-self: flex-start; margin-bottom: 12px; }
+.map-page-hours { height: auto; }
+.map-page-hours .map-layout { height: 58vh; min-height: 340px; flex: none; }
+.hours-panel { display: grid; gap: 14px; margin-bottom: 14px; }
+.hours-purpose { margin: 0; font-size: 15px; color: var(--text); }
+.hours-control { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 24px -20px rgba(0,0,0,0.5); }
+.hours-readout { display: grid; gap: 2px; min-width: 96px; }
+.hours-value { font: 600 34px/1 var(--mono); letter-spacing: 0; transition: transform 0.18s ease; display: inline-block; }
+.hours-value.pulse { transform: translateY(-2px); }
+.hours-track { display: grid; gap: 4px; }
+.hours-bars { margin: 0 8px; display: flex; align-items: flex-end; gap: 2px; height: 34px; }
+.hours-bar { flex: 1; background: color-mix(in srgb, var(--text) 22%, transparent); border-radius: 2px 2px 0 0; transition: height 0.25s ease, background 0.2s; }
+.hours-bar[data-empty] { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.hours-bar.on { background: var(--text); }
+.hours-slider { -webkit-appearance: none; appearance: none; width: 100%; margin: 0; height: 24px; background: none; cursor: pointer; }
+/* Track shaded night - day - night, so the hour reads as light before it reads as a number. */
+.hours-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(to left, #1b2a44 0%, #3a4f73 22%, #e9c46a 30%, #f4efe0 50%, #e9c46a 75%, #3a4f73 82%, #1b2a44 100%); box-shadow: 0 1px 2px rgba(0,0,0,0.35) inset; }
+.hours-slider::-moz-range-track { height: 8px; border-radius: 4px; background: linear-gradient(to left, #1b2a44 0%, #3a4f73 22%, #e9c46a 30%, #f4efe0 50%, #e9c46a 75%, #3a4f73 82%, #1b2a44 100%); }
+.hours-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -7px; border-radius: 50%; background: #fff; border: 2px solid #15181b; box-shadow: 0 2px 6px rgba(0,0,0,0.45); }
+.hours-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #15181b; box-shadow: 0 2px 6px rgba(0,0,0,0.45); }
+.hours-ticks { position: relative; height: 14px; font: 11px var(--mono); color: var(--text-muted); margin: 0 8px; }
+.hours-ticks span { position: absolute; top: 0; transform: translateX(50%); }
+.hours-ticks span:first-child { transform: none; }
+.hours-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.hours-stat { display: grid; gap: 2px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.hours-stat strong { font: 600 28px/1.1 var(--mono); }
+.hours-stat-line { font-size: 13.5px; color: var(--text); }
+.hours-missing { padding: 12px 16px; border-radius: var(--radius); background: color-mix(in srgb, #f2d24b 16%, var(--surface)); border: 1px solid color-mix(in srgb, #f2d24b 40%, transparent); }
+.hours-missing ul { margin: 6px 0; padding-inline-start: 20px; }
+.hours-missing p { margin: 0; font-size: 13.5px; }
+.hours-legend { flex-wrap: wrap; gap: 8px 18px; }
+.hours-legend .mono-label:not(:first-child) { margin-inline-start: 12px; }
+.legend-mark { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-inline-end: 6px; vertical-align: middle; background: var(--text-muted); }
+.legend-mark.closed { opacity: 0.3; }
+.legend-mark.unknown { background: none; border: 2px dashed var(--text-muted); width: 10px; height: 10px; }
+.map-marker-wrapper { transition: opacity 0.25s ease, filter 0.25s ease; }
+.map-marker-wrapper.hours-closed { opacity: 0.3; filter: grayscale(0.6); }
+.map-marker-wrapper.hours-unknown .map-marker-pin svg { outline: 2px dashed rgba(255,255,255,0.85); outline-offset: 2px; border-radius: 50%; }
+.map-marker-wrapper.hours-unknown .map-marker-dot { outline: 2px dashed rgba(255,255,255,0.85); outline-offset: 2px; }
+.map-marker-wrapper.hours-open .map-marker-pin svg { filter: drop-shadow(0 0 8px rgba(255,255,255,0.7)); }
+.hours-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 16px; }
+.hours-group h3 { display: flex; gap: 8px; align-items: baseline; margin: 0 0 6px; font-size: 14px; }
+.hours-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.hours-group.closed .hours-row { opacity: 0.7; }
+.hours-row { width: 100%; display: grid; grid-template-columns: 32px 1fr auto auto; gap: 10px; align-items: center; text-align: start; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; background: var(--surface); color: var(--text); font: 14px var(--font); cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 0.12s, background 0.12s; }
+.hours-row:hover { background: var(--surface-hover); transform: translateY(-1px); }
+.hours-row:active { transform: translateY(0); }
+.hours-row-name { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.permit-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text); white-space: nowrap; }
+.permit-chip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.permit-chip.expired { color: var(--red); }
+@media (max-width: 720px) {
+  .hours-control { grid-template-columns: 1fr auto; padding: 12px; gap: 10px; }
+  .hours-track { grid-column: 1 / -1; grid-row: 2; }
+  .hours-summary { grid-template-columns: 1fr; }
+  .hours-ticks .minor { display: none; }
+  .map-page-hours .map-layout { height: 52vh; }
+  .hours-list { grid-template-columns: 1fr; }
+  .hours-legend .mono-label { flex-basis: 100%; margin-inline-start: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-marker-wrapper, .hours-bar, .hours-value, .hours-row { transition: none; }
+}

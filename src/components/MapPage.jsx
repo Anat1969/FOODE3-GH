@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { approvalTone } from '../utils/colors.js';
+import HoursPanel, { HoursList, useHoursView } from './HoursPanel.jsx';
+import { PERMIT, permitState } from '../utils/hours.js';
 import { isPinned } from './PositionCard.jsx';
 import maplibregl from 'maplibre-gl';
 
@@ -36,7 +38,22 @@ function createMarkerEl(name, color, isSelected, pinned) {
   return wrapper;
 }
 
+function readView() {
+  const q = new URLSearchParams(window.location.search);
+  return q.get('view') === 'hours' ? 'hours' : 'approval';
+}
+
 export default function MapPage({ positions, update, selectedId, openCard, pinningId, setPinningId, onPinned, focusId, canEdit }) {
+  const [view, setViewState] = useState(readView);
+  const hours = useHoursView(positions);
+  const setView = (v) => {
+    setViewState(v);
+    const url = new URL(window.location.href);
+    if (v === 'hours') url.searchParams.set('view', 'hours'); else { url.searchParams.delete('view'); url.searchParams.delete('h'); }
+    window.history.replaceState(null, '', url.pathname + url.search);
+  };
+  const hoursMode = view === 'hours' && !pinningId;
+  const permitById = useMemo(() => Object.fromEntries(positions.map(p => [p.id, permitState(p)])), [positions]);
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef({});
@@ -132,7 +149,9 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
     positions.forEach(p => {
       const lng = p.mapPin?.x ?? ASHDOD_CENTER[0];
       const lat = p.mapPin?.y ?? ASHDOD_CENTER[1];
-      const color = STATUS_COLORS[approvalTone(p.approval)] || STATUS_COLORS.gray;
+      const color = hoursMode
+        ? PERMIT[permitById[p.id]?.tone || 'unknown'].color
+        : STATUS_COLORS[approvalTone(p.approval)] || STATUS_COLORS.gray;
       const isSelected = selectedId === p.id;
       const pinned = isPinned(p.mapPin);
 
@@ -157,7 +176,18 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
         .addTo(mapRef.current);
       markersRef.current[p.id] = { marker, key };
     });
-  }, [positions, selectedId, mapReady, openCard]);
+  }, [positions, selectedId, mapReady, openCard, hoursMode, permitById]);
+
+  // Moving the hour keeps every marker in place and only changes its state, so the change reads as the same stand opening or closing.
+  useEffect(() => {
+    Object.entries(markersRef.current).forEach(([id, { marker }]) => {
+      const el = marker.getElement();
+      const open = hoursMode ? hours.openById[id] : undefined;
+      el.classList.toggle('hours-open', open === true);
+      el.classList.toggle('hours-closed', open === false);
+      el.classList.toggle('hours-unknown', hoursMode && open == null);
+    });
+  }, [hoursMode, hours.openById, positions, mapReady, selectedId]);
 
   // Fly to a position when asked from its card.
   useEffect(() => {
@@ -169,7 +199,14 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
   const pinningName = pinningId ? positions.find(p => p.id === pinningId)?.positionName : null;
 
   return (
-    <section className="map-page panel">
+    <section className={`map-page panel${hoursMode ? ' map-page-hours' : ''}`}>
+      {!pinningId && (
+        <div className="map-view-switch segmented large" role="group" aria-label="מה המפה מראה">
+          <button className={view === 'approval' ? 'on' : ''} aria-pressed={view === 'approval'} onClick={() => setView('approval')}>אישור מיקום</button>
+          <button className={view === 'hours' ? 'on' : ''} aria-pressed={view === 'hours'} onClick={() => setView('hours')}>מפה לפי שעה</button>
+        </div>
+      )}
+      {hoursMode && <HoursPanel positions={positions} hours={hours} permitById={permitById} openCard={openCard} />}
       <div className="map-header">
         {pinningId && (
           <div className="pinning-banner">
@@ -192,11 +229,25 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
           )}
         </div>
       </div>
-      <div className="map-legend">
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מיקום מקובל</span>
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> מיקום לא מקובל</span>
-      </div>
+      {hoursMode ? (
+        <div className="map-legend hours-legend" aria-label="מקרא">
+          <span className="mono-label">צבע: תוקף הרישיון</span>
+          {['expired', 'soon', 'valid', 'unknown'].map(t => (
+            <span key={t}><span className="legend-dot" style={{ background: PERMIT[t].color }} /> {PERMIT[t].label}</span>
+          ))}
+          <span className="mono-label">סמן: שעות</span>
+          <span><span className="legend-mark open" /> פתוחה</span>
+          <span><span className="legend-mark closed" /> סגורה</span>
+          <span><span className="legend-mark unknown" /> אין שעות רשומות</span>
+        </div>
+      ) : (
+        <div className="map-legend">
+          <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מיקום מקובל</span>
+          <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
+          <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> מיקום לא מקובל</span>
+        </div>
+      )}
+      {hoursMode && <HoursList positions={positions} hours={hours} permitById={permitById} openCard={openCard} />}
     </section>
   );
 }

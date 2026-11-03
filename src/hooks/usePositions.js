@@ -44,24 +44,49 @@ function toDb(changes) {
 export function fromRow(r) {
   const p = { id: r.id, mapPin: { x: r.map_pin_x, y: r.map_pin_y }, updatedAt: r.updated_at };
   for (const [k, col] of Object.entries(FIELD_MAP)) p[k] = r[col] ?? '';
+  // Read-only fields for the hours map. Kept as they are in the row; columns that do not exist yet stay empty.
+  p.businessLicense = r.business_license ?? '';
+  p.openingHours = r.opening_hours ?? (r.open_time && r.close_time ? `${r.open_time}-${r.close_time}` : '');
+  p.permitExpiresAt = r.permit_expires_at ?? r.business_license_expires_at ?? '';
   return p;
 }
+
+const LOAD_TIMEOUT_MS = 15000;
 
 const byNumber = (a, b) => Number(a.number) - Number(b.number) || String(a.number).localeCompare(String(b.number));
 
 export default function usePositions({ onError } = {}) {
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null); // { kind: 'timeout' | 'server' | 'network', detail }
   const [saveState, setSaveState] = useState({ pending: 0, at: null, error: null });
   const pendingRef = useRef({}); // id -> { changes, timer }
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
+  // A load that fails or hangs ends in a visible error, never in an endless spinner.
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from('foode_positions').select('*');
-    if (!error && data) setPositions(data.map(fromRow).sort(byNumber));
-    setLoading(false);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), LOAD_TIMEOUT_MS);
+    try {
+      const { data, error } = await supabase.from('foode_positions').select('*').abortSignal(ctrl.signal);
+      if (error) {
+        const aborted = ctrl.signal.aborted;
+        const offline = /fetch|network/i.test(error.message || '');
+        setLoadError({ kind: aborted ? 'timeout' : offline ? 'network' : 'server', detail: [error.code, error.message].filter(Boolean).join(' · ') });
+      } else {
+        setPositions((data || []).map(fromRow).sort(byNumber));
+        setLoadError(null);
+      }
+    } catch (err) {
+      setLoadError({ kind: ctrl.signal.aborted ? 'timeout' : 'network', detail: err?.message || '' });
+    } finally {
+      clearTimeout(timer);
+      setLoading(false);
+    }
   }, []);
+
+  const retry = useCallback(() => { setLoading(true); setLoadError(null); load(); }, [load]);
 
   useEffect(() => {
     load();
@@ -157,5 +182,5 @@ export default function usePositions({ onError } = {}) {
     write('positions', 'remove', id).catch(err => { onErrorRef.current?.(err); load(); });
   }, [load]);
 
-  return { positions, update, add, remove, loading, saveState };
+  return { positions, update, add, remove, loading, loadError, retry, saveState };
 }

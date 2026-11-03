@@ -5,6 +5,7 @@
 
 ## פריסה
 - Vercel, פרויקט `foode-3-gh`. הכתובת הראשית: https://foode-3-gh.vercel.app
+- GitHub Pages: https://anat1969.github.io/FOODE3-GH/ מגיש את הענף `gh-pages`. `deploy.yml` בונה את main עם `BASE_PATH=/FOODE3-GH/` ודוחף ל-gh-pages, ושומר את התיקייה `preview/` (תצוגות מקדימות של ענפים). כל נתיב בקוד יחסי או דרך `import.meta.env.BASE_URL`, אף פעם לא `/` חשוף.
 - ענף הייצור הוא `main`: רק מיזוג ל-main מעדכן את הכתובת הראשית.
 - ענת אישרה מיזוג קבוע: אחרי בדיקה ירוקה, למזג PR ל-main בלי לשאול.
 
@@ -52,6 +53,10 @@
 - ניגודיות: בחירות ברשימות נפתחות חייבות להיות קריאות בשני המצבים (`select option` עם רקע מלא).
 - לחיצה על עמדה, תמונה או מיקום (בטבלה ובמפה) פותחת את כרטיס העמדה.
 - הרמוניקה: צירוף קבצים, כפתור אישור, היסטוריית הערות לתיקון, ומייל ליזם (טיוטה בתוכנת הדואר, והשליחה נרשמת בהיסטוריה).
+
+## יומן תיקונים
+- 03.11.2026: Pages נתקע על "טוען נתונים…". הסיבה: מיוני 2026 כל ריצה של `deploy.yml` נדחתה ("Branch main is not allowed to deploy to github-pages"), ולכן Pages הגיש בנייה ישנה מיולי שפונה לפרויקט FOODE3 שנמחק. התיקון: פרסום לענף gh-pages, נתיב בסיס, וטעינה שנגמרת תמיד: אחרי 15 שניות או בשגיאה מופיע מסך "הנתונים לא נטענו" עם מה עושים, קוד התקלה וכפתור "ניסיון חוזר".
+- 03.11.2026: "מפה לפי שעה" במפת העמדות (מתג "אישור מיקום / מפה לפי שעה", `?view=hours&h=19`): סרגל שעות, סמן פתוחה/סגורה/בלי שעות, צבע לפי תוקף הרישיון (אדום פג, ירוק בתוקף, ענבר פחות מ-30 יום, אפור בלי תאריך), מקרא ורשימה מקובצת. אין עדיין שדות לשעות פעילות ולתאריך תוקף: הקוד קורא `opening_hours` (או `open_time` ו-`close_time`) ו-`permit_expires_at` כשיתווספו, ותאריך שנכתב בשדה רישיון העסק. בלי המידע הזה הכול מוצג "לא ידוע" ולא מומצא.
 
 ## A&I logo button
 The top bar holds only the app name (links home), content navigation, and ONE logo button "אד' ענת שטיבלמן A&I" (`<ai-menu>` from https://appofapp-gh.vercel.app/ai-menu.js). Every editing and development action (העתקת קישור, שיחת הפיתוח, פרויקט המחקר, התקנת האפליקציה, edit mode, add, delete) lives only inside it, never as loose buttons. Standard: https://github.com/Anat1969/AppOfApp-GH/blob/main/docs/ai-menu-standard.md

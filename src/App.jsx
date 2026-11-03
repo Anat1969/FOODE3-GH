@@ -29,6 +29,12 @@ function buildUrl({ page, pos, tab, filter }) {
   const q = new URLSearchParams();
   if (page && page !== 'home') q.set('p', page);
   if (filter) q.set('f', filter);
+  if (page === 'map') {
+    // The hours map keeps its own view and hour in the address.
+    const cur = new URLSearchParams(window.location.search);
+    if (cur.get('view')) q.set('view', cur.get('view'));
+    if (cur.get('h')) q.set('h', cur.get('h'));
+  }
   if (pos) {
     q.set('pos', pos);
     if (tab && tab !== 'details') q.set('tab', tab);
@@ -39,6 +45,25 @@ function buildUrl({ page, pos, tab, filter }) {
 
 function readTheme() {
   try { return localStorage.getItem('foode3-theme') || 'dark'; } catch { return 'dark'; }
+}
+
+const LOAD_ERROR_TEXT = {
+  timeout: ['השרת לא ענה תוך 15 שניות.', 'החיבור איטי או שהשרת עמוס. לוחצים "ניסיון חוזר".'],
+  network: ['אין חיבור לשרת הנתונים.', 'בודקים שיש אינטרנט ושאין חסימה של רשת העירייה, ולוחצים "ניסיון חוזר".'],
+  server: ['שרת הנתונים סירב לבקשה.', 'זו תקלה בהגדרות ולא במכשיר. שולחים את קוד התקלה בשיחת הפיתוח (בכפתור הלוגו).'],
+};
+
+function LoadError({ error, onRetry }) {
+  const [what, fix] = LOAD_ERROR_TEXT[error.kind] || LOAD_ERROR_TEXT.server;
+  return (
+    <div className="load-error" role="alert">
+      <span className="mono-label">הנתונים לא נטענו</span>
+      <p className="load-error-what">{what}</p>
+      <p className="load-error-fix"><strong>מה עושים:</strong> {fix}</p>
+      <button className="btn primary" onClick={onRetry}>ניסיון חוזר</button>
+      {error.detail && <p className="load-error-code mono-label">קוד התקלה: <bdi dir="ltr">{error.detail}</bdi></p>}
+    </div>
+  );
 }
 
 export default function App() {
@@ -64,7 +89,7 @@ export default function App() {
     notify(err?.message === 'not_authorized' ? 'אין הרשאת עריכה. יש להיכנס דרך קישור העריכה.' : `השמירה נכשלה: ${err?.message || ''}`, 'error');
   }, [notify]);
 
-  const { positions, update, add, remove, loading, saveState } = usePositions({ onError });
+  const { positions, update, add, remove, loading, loadError, retry, saveState } = usePositions({ onError });
   const docs = useRecords('documents', { onError });
   const events = useRecords('position_events', { onError });
 
@@ -177,7 +202,9 @@ export default function App() {
       />
 
       {loading ? (
-        <div className="loading-screen"><div className="spinner" /><p>טוען נתונים…</p></div>
+        <div className="loading-screen" role="status"><div className="spinner" /><p>טוען נתונים…</p></div>
+      ) : loadError ? (
+        <LoadError error={loadError} onRetry={retry} />
       ) : (
         <main className={`main-area page-${page}`}>
           {page === 'home' && <HomePage positions={positions} events={events.rows} go={go} openCard={openCard} filterTo={filterTo} />}

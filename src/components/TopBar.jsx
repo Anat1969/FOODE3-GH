@@ -67,8 +67,8 @@ export default function TopBar({ page, go, editor, saveState, onEditorChange }) 
   return (
     <header className="topbar" ref={ref}>
       <div className="topbar-row">
-        <a className="brand" href="/" onClick={e => { e.preventDefault(); go('home'); }} title="דף הבית">
-          <img src="/icon-192.png" alt="" className="brand-mark" width="32" height="32" />
+        <a className="brand" href={import.meta.env.BASE_URL} onClick={e => { e.preventDefault(); go('home'); }} title="דף הבית">
+          <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" className="brand-mark" width="32" height="32" />
           <span className="brand-text">
             <span className="brand-name">פודטראק אשדוד</span>
             <span className="brand-sub">ניהול עמדות</span>
@@ -83,7 +83,7 @@ export default function TopBar({ page, go, editor, saveState, onEditorChange }) 
         </nav>
         <div className="topbar-end">
           <SaveIndicator saveState={saveState} editor={editor} />
-          <img src="/ashdod-logo.png" alt="עיריית אשדוד" className="city-logo" height="40" />
+          <img src={`${import.meta.env.BASE_URL}ashdod-logo.png`} alt="עיריית אשדוד" className="city-logo" height="40" />
           <ai-menu ref={menu} chat={DEV_CHAT_URL} research={RESEARCH_URL} />
         </div>
       </div>
