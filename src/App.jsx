@@ -146,6 +146,14 @@ export default function App() {
     }
   }, [positions, update, events, editor]);
 
+  // Approve (or undo approval of) a harmonica from outside the card, with the same history entry.
+  const approveHarmonica = useCallback((id, approve) => {
+    update(id, approve
+      ? { harmonicaStatus: 'מאושרת', harmonicaApprovedAt: new Date().toISOString(), harmonicaApprovedBy: editor || '' }
+      : { harmonicaStatus: 'הוגשה', harmonicaApprovedAt: '', harmonicaApprovedBy: '' });
+    events.save(crypto.randomUUID(), { position_id: id, kind: approve ? 'approval' : 'status', body: approve ? 'ההרמוניקה אושרה' : 'סטטוס הרמוניקה: הוגשה', author: editor || '' }).catch(() => {});
+  }, [update, events, editor]);
+
   const startPin = useCallback((id) => {
     setPinningId(id);
     setCardId(null);
@@ -239,7 +247,16 @@ export default function App() {
               canEdit={Boolean(editor)}
             />
           )}
-          {page === 'report' && <ActionReportPage positions={positions} openCard={openCard} />}
+          {page === 'report' && <ActionReportPage
+              positions={positions}
+              openCorrectionsById={openCorrectionsById}
+              update={update}
+              changeApproval={changeApproval}
+              approveHarmonica={approveHarmonica}
+              openCard={openCard}
+              startPin={startPin}
+              canEdit={Boolean(editor)}
+            />}
           {page === 'examples' && <ExamplesPage editMode={Boolean(editor)} onError={onError} />}
           {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} canEdit={Boolean(editor)} onError={onError} />}
           {page === 'policy' && <PolicyViewer />}

@@ -129,7 +129,9 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'עמדות הפודטראק של אשדוד' })).toBeVisible();
   await expect(page.locator('.stat-tile').first()).toContainText('4');
   await expect(page.locator('.brand')).toBeVisible();
-  await expect(page.locator('.city-logo')).toBeVisible();
+  // A municipal app: the menu button carries the Ashdod Municipality logo, and there is no second logo
+  await expect(page.locator('.topbar ai-menu[brand="ashdod"]')).toHaveCount(1);
+  await expect(page.locator('.city-logo')).toHaveCount(0);
   await expect(page.locator('.topbar').getByRole('button', { name: 'העתקת קישור' })).toHaveCount(0);
 
   for (const name of ['רשימת עמדות', 'מפת עמדות', 'דוח לטיפול', 'דוגמאות', 'קישורים', 'מדיניות', 'הגדרות']) {
@@ -396,4 +398,59 @@ test('screenshots for review', async ({ page }) => {
   await page.screenshot({ path: 'test-results/card-harmonica.png' });
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
   await page.screenshot({ path: 'test-results/card-light.png' });
+});
+
+test('action report: categories open in place and every fix writes to the data', async ({ page }) => {
+  const { writes } = await mockSupabase(page);
+  await page.goto('/?p=report');
+  const cats = page.locator('.report-cat');
+  await expect(cats).toHaveCount(5);
+  await expect(page.locator('.report-cat-body')).toHaveCount(0);
+
+  // Infrastructure: check = fixed, written to the table field; uncheck = undo
+  await page.locator('.report-cat-head', { hasText: 'תשתיות' }).click();
+  const water = page.locator('.fix-row', { hasText: 'חיבור מים' });
+  await expect(water).toHaveCount(1);
+  await water.locator('.fix-check').check();
+  await expect.poll(() => writes.find(w => w.p_table === 'positions' && w.p_data.water === 'טוב')).toBeTruthy();
+  const handled = page.locator('.fix-row.handled', { hasText: 'חיבור מים' });
+  await expect(handled).toHaveCount(1);
+  await handled.locator('.fix-check').click();
+  await expect.poll(() => writes.filter(w => w.p_data.water === 'לא טוב').length).toBeGreaterThan(0);
+  await expect(page.locator('.fix-row:not(.handled)', { hasText: 'חיבור מים' })).toHaveCount(1);
+
+  // Approval: choose a value in place
+  await page.locator('.report-cat-head', { hasText: 'אישור מיקום' }).click();
+  const firstApproval = page.locator('.report-cat.open', { hasText: 'אישור מיקום' }).locator('.fix-row:not(.handled) select').first();
+  await firstApproval.selectOption('מיקום מקובל');
+  await expect.poll(() => writes.find(w => w.p_data.approval === 'מיקום מקובל')).toBeTruthy();
+
+  // Missing details: fill the field in the report
+  await page.locator('.report-cat-head', { hasText: 'פרטים חסרים' }).click();
+  const devName = page.locator('.fix-row', { hasText: 'שם היזם' }).first().locator('input.fix-input');
+  await devName.fill('יזם מהדוח');
+  await devName.press('Enter');
+  await expect.poll(() => writes.find(w => w.p_data.developer_name === 'יזם מהדוח')).toBeTruthy();
+
+  // Harmonica waiting for approval: check = approved, with a history entry
+  await page.locator('.report-cat-head', { hasText: 'הרמוניקה' }).click();
+  await page.locator('.fix-row', { hasText: 'אישור ההרמוניקה' }).locator('.fix-check').check();
+  await expect.poll(() => writes.find(w => w.p_data.harmonica_status === 'מאושרת')).toBeTruthy();
+  await expect.poll(() => writes.find(w => w.p_table === 'position_events' && w.p_data.kind === 'approval')).toBeTruthy();
+
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: 'test-results/report.png' });
+
+  // Position name opens its card
+  await page.locator('.report-cat.open .fix-pos').first().click();
+  await expect(page.locator('.position-card')).toBeVisible();
+});
+
+test('action report is read-only without the edit link', async ({ page }) => {
+  const { writes } = await mockSupabase(page, { editor: false });
+  await page.goto('/?p=report');
+  await page.locator('.report-cat-head', { hasText: 'תשתיות' }).click();
+  await expect(page.locator('.report-cat.open .fix-check').first()).toBeDisabled();
+  await expect(page.locator('.report-cat.open select')).toHaveCount(0);
+  expect(writes).toHaveLength(0);
 });

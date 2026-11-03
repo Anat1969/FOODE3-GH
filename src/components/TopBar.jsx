@@ -29,7 +29,7 @@ export default function TopBar({ page, go, editor, saveState, onEditorChange }) 
   const ref = useRef(null);
   const menu = useRef(null);
 
-  // The A&I logo button: copy link, dev chat, research project, install, and connecting this device for editing.
+  // The logo button (a municipal app, so the Ashdod Municipality logo): copy link, dev chat, research project, install, and connecting this device for editing.
   useEffect(() => {
     const el = menu.current;
     if (!el) return;
@@ -83,8 +83,7 @@ export default function TopBar({ page, go, editor, saveState, onEditorChange }) 
         </nav>
         <div className="topbar-end">
           <SaveIndicator saveState={saveState} editor={editor} />
-          <img src={`${import.meta.env.BASE_URL}ashdod-logo.png`} alt="עיריית אשדוד" className="city-logo" height="40" />
-          <ai-menu ref={menu} chat={DEV_CHAT_URL} research={RESEARCH_URL} />
+          <ai-menu ref={menu} brand="ashdod" chat={DEV_CHAT_URL} research={RESEARCH_URL} />
         </div>
       </div>
     </header>
