@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import PositionCard from './PositionCard.jsx';
 import { statusColor } from '../utils/colors.js';
 import maplibregl from 'maplibre-gl';
 
@@ -40,7 +41,7 @@ function createMarkerEl(name, color, isSelected, pinned) {
   return wrapper;
 }
 
-export default function MapPage({ positions, update, selectedId, setSelectedId, pinningId, setPinningId }) {
+export default function MapPage({ positions, update, selectedId, setSelectedId, pinningId, setPinningId, trucks = [], editMode = false, remove, duplicate, setPage, embedded = false }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef({});
@@ -169,9 +170,9 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
   const pinningName = pinningId ? positions.find(p => p.id === pinningId)?.positionName : null;
 
   return (
-    <section className="map-page glass-panel">
+    <section className={`map-page glass-panel${embedded ? " embedded" : ""}`}>
       <div className="map-header">
-        <h2>מפת עמדות – אשדוד</h2>
+        {!embedded && <h2>מפת עמדות – אשדוד</h2>}
         {pinningId && (
           <div className="pinning-banner">
             מסמנים את <strong>{pinningName}</strong> – לחצי על המפה למיקום הפודטראק
@@ -192,21 +193,9 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
             </div>
           )}
         </div>
-        {selected && !pinningId && (
-          <div className="map-info-card glass-panel">
-            <h3>{selected.positionName}</h3>
-            <p>{selected.complexName} · {selected.businessName}</p>
-            <div className="map-info-row">
-              <span className={`check-mark-small ${selected.water === 'טוב' ? 'good' : 'bad'}`}>מים: {selected.water === 'טוב' ? 'תקין' : 'לא תקין'}</span>
-              <span className={`check-mark-small ${selected.electricity === 'טוב' ? 'good' : 'bad'}`}>חשמל: {selected.electricity === 'טוב' ? 'תקין' : 'לא תקין'}</span>
-              <span className={`check-mark-small ${selected.sewage === 'טוב' ? 'good' : 'bad'}`}>ביוב: {selected.sewage === 'טוב' ? 'תקין' : 'לא תקין'}</span>
-            </div>
-            <div className="map-info-status">
-              <span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span>
-            </div>
-            {isPinned(selected.mapPin) && <p className="map-info-coords">נעוץ: {selected.mapPin.x.toFixed(5)}, {selected.mapPin.y.toFixed(5)}</p>}
-            <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>סמן מיקום על המפה</button>
-          </div>
+        {!pinningId && (
+          <PositionCard position={selected} trucks={trucks} update={update} remove={remove} duplicate={duplicate}
+            onPin={setPinningId} onClose={() => setSelectedId(null)} editMode={editMode} setPage={setPage} />
         )}
       </div>
       <div className="map-legend">

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import SliceWindow, { applyConditions } from './SliceWindow.jsx';
 const TYPES = ['פרטי', 'חברה לתיירות'];
 const fmt = (d) => (d ? d.split('-').reverse().join('.') : '—');
 
@@ -12,8 +14,28 @@ function endClass(d) {
   return n < 0 ? 'red' : n <= 180 ? 'orange' : 'green';
 }
 
-export default function TrucksPage({ trucks, update, positions, editMode }) {
-  const soon = trucks.filter(t => { const n = daysLeft(t.endDate); return n !== null && n >= 0 && n <= 180; }).length;
+const COLS = [
+  ['number', 'מס׳'], ['ownerName', 'בעל הפודטראק'], ['location', 'מיקום'], ['positionId', 'עמדה מקושרת'],
+  ['ownerType', 'סוג'], ['phone', 'טלפון'], ['startDate', 'תאריך הפעלה'], ['endDate', 'סיום הסכם'],
+  ['optionUntil', 'אופציה עד'], ['status', 'סטטוס'],
+];
+const SLICE_COLUMNS = [
+  { key: 'ownerName', label: 'בעל הפודטראק', kind: 'text' },
+  { key: 'location', label: 'מיקום', kind: 'select' },
+  { key: 'ownerType', label: 'סוג', kind: 'select' },
+  { key: 'status', label: 'סטטוס', kind: 'select' },
+];
+
+export default function TrucksPage({ trucks: all, update, positions, editMode }) {
+  const [sortCol, setSortCol] = useState('number');
+  const [asc, setAsc] = useState(true);
+  const [conditions, setConditions] = useState([]);
+  const trucks = applyConditions(all, conditions, SLICE_COLUMNS).sort((a, b) => {
+    const x = a[sortCol] ?? '', y = b[sortCol] ?? '';
+    const cmp = sortCol === 'number' ? Number(x) - Number(y) : String(x).localeCompare(String(y), 'he');
+    return asc ? cmp : -cmp;
+  });
+  const soon = all.filter(t => { const n = daysLeft(t.endDate); return n !== null && n >= 0 && n <= 180; }).length;
   const posName = (id) => positions.find(p => p.id === id)?.positionName;
 
   return (
@@ -21,14 +43,21 @@ export default function TrucksPage({ trucks, update, positions, editMode }) {
       <div className="section-title">
         <div>
           <h2>פודטראקים והסכמים</h2>
-          <p>{trucks.length} הסכמים פעילים · {soon} מסתיימים ב-6 החודשים הקרובים</p>
+          <p>{trucks.length} מתוך {all.length} הסכמים · {soon} מסתיימים ב-6 החודשים הקרובים</p>
         </div>
+        <div className="actions"><SliceWindow columns={SLICE_COLUMNS} rows={all} conditions={conditions} setConditions={setConditions} /></div>
       </div>
       <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              {['מס׳', 'בעל הפודטראק', 'מיקום', 'עמדה מקושרת', 'סוג', 'טלפון', 'תאריך הפעלה', 'סיום הסכם', 'אופציה עד', 'סטטוס'].map(h => <th key={h}>{h}</th>)}
+              {COLS.map(([k, h]) => (
+                <th key={k}><span className="th-name">{h}
+                  <span className="th-arrows">
+                    <button className={sortCol === k && asc ? 'on' : ''} onClick={() => { setSortCol(k); setAsc(true); }} aria-label={`מיון עולה לפי ${h}`}>▲</button>
+                    <button className={sortCol === k && !asc ? 'on' : ''} onClick={() => { setSortCol(k); setAsc(false); }} aria-label={`מיון יורד לפי ${h}`}>▼</button>
+                  </span></span></th>
+              ))}
             </tr>
           </thead>
           <tbody>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import TopBar from './components/TopBar.jsx';
 import HomePage from './components/HomePage.jsx';
 import PositionsTable from './components/PositionsTable.jsx';
-import DetailsPanel from './components/DetailsPanel.jsx';
+import PositionCard from './components/PositionCard.jsx';
 import MapPage from './components/MapPage.jsx';
 import ReportsPage from './components/ReportsPage.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
@@ -45,18 +45,20 @@ export default function App() {
       <main className="main-area">
         {page === 'home' && (
           <HomePage positions={allPositions} trucks={allTrucks} setPage={setPage}
-            mapProps={{ update, selectedId, setSelectedId, pinningId, setPinningId }} />
+            mapProps={{ update, remove, duplicate, selectedId, setSelectedId, pinningId, setPinningId, trucks: allTrucks, editMode, setPage }} />
         )}
         {page === 'list' && (
           <div className="list-layout">
-            <DetailsPanel
-              selected={selected}
+            <PositionCard
+              position={selected}
+              trucks={allTrucks}
               update={update}
               remove={remove}
               duplicate={duplicate}
-              goPin={goPin}
+              onPin={goPin}
               onClose={() => setSelectedId(null)}
               editMode={editMode}
+              setPage={setPage}
             />
             <PositionsTable
               positions={positions}
@@ -75,10 +77,15 @@ export default function App() {
           <MapPage
             positions={positions}
             update={update}
+            remove={remove}
+            duplicate={duplicate}
             selectedId={selectedId}
             setSelectedId={setSelectedId}
             pinningId={pinningId}
             setPinningId={setPinningId}
+            trucks={allTrucks}
+            editMode={editMode}
+            setPage={setPage}
           />
         )}
         {page === 'trucks' && <TrucksPage trucks={trucks} update={updateTruck} positions={allPositions} editMode={editMode} />}

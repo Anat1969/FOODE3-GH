@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import Chip from './Chip.jsx';
 import { approvalKind } from '../utils/colors.js';
+import SliceWindow, { applyConditions } from './SliceWindow.jsx';
 
 const approvalOptions = ['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל'];
 const GROUPS = { infra: 'תשתיות', quality: 'איכות' };
@@ -20,6 +21,19 @@ const COLUMNS = [
   { key: 'environmentQuality', label: 'סביבה', group: 'quality', filter: 'select' },
   { key: 'notes', label: 'הערות', filter: 'text' },
   { key: '_pin', label: 'מפה', sortable: false, filter: 'none' },
+];
+const checkDisplay = (v) => (v === 'טוב' ? 'תקין' : 'לא תקין');
+const SLICE_COLUMNS = [
+  { key: 'positionName', label: 'שם עמדה', kind: 'text' },
+  { key: 'complexName', label: 'שם מתחם', kind: 'select' },
+  { key: 'approval', label: 'האם מקובלת', kind: 'select' },
+  { key: 'businessName', label: 'שם עסק', kind: 'text' },
+  { key: 'water', label: 'מים', kind: 'select', display: checkDisplay },
+  { key: 'electricity', label: 'חשמל', kind: 'select', display: checkDisplay },
+  { key: 'sewage', label: 'ביוב', kind: 'select', display: checkDisplay },
+  { key: 'buildingQuality', label: 'איכות מבנה', kind: 'select' },
+  { key: 'environmentQuality', label: 'איכות סביבה', kind: 'select' },
+  { key: 'notes', label: 'הערות', kind: 'text' },
 ];
 const BY_KEY = Object.fromEntries(COLUMNS.map(c => [c.key, c]));
 
@@ -64,7 +78,7 @@ export default function PositionsTable({ positions, update, add, remove, selecte
   const [sortCol, setSortCol] = useState('approval');
   const [sortAsc, setSortAsc] = useState(true);
   const [order, setOrder] = useState(loadOrder);
-  const [filters, setFilters] = useState({});
+  const [conditions, setConditions] = useState([]);
   const [grouped, setGrouped] = useState(true);
   const [dragKey, setDragKey] = useState(null);
 
@@ -83,25 +97,16 @@ export default function PositionsTable({ positions, update, add, remove, selecte
     saveOrder(next);
   };
 
-  const handleSort = (key) => {
-    if (key === sortCol) setSortAsc(!sortAsc);
-    else { setSortCol(key); setSortAsc(true); }
-  };
-
-  const optionsFor = (key) => [...new Set(positions.map(p => p[key]).filter(v => v !== '' && v != null))].sort(compareValues);
-  const activeFilters = Object.entries(filters).filter(([, v]) => v);
+  const activeCount = conditions.filter(c => c.col && c.val).length;
 
   const rows = useMemo(() => {
-    let list = positions.filter(p => activeFilters.every(([k, v]) => {
-      const c = BY_KEY[k];
-      return c.filter === 'text' ? String(p[k] || '').includes(v) : String(p[k]) === v;
-    }));
+    let list = applyConditions(positions, conditions, SLICE_COLUMNS);
     list = [...list].sort((a, b) => {
       const cmp = compareValues(a[sortCol], b[sortCol]);
       return sortAsc ? cmp : -cmp;
     });
     return list;
-  }, [positions, filters, sortCol, sortAsc]);
+  }, [positions, conditions, sortCol, sortAsc]);
 
   const sections = useMemo(() => {
     if (!grouped) return [{ name: null, rows }];
@@ -127,18 +132,25 @@ export default function PositionsTable({ positions, update, add, remove, selecte
   });
 
   const Label = ({ c }) => (
-    <span className="th-label" title="גרירה להזזת העמודה, לחיצה למיון">
-      <span className="th-name" onClick={c.sortable === false ? undefined : () => handleSort(c.key)}>
-        {c.label}{sortCol === c.key && <span className="sort-arrow">{sortAsc ? ' ▲' : ' ▼'}</span>}
+    <span className="th-label" title="גרירה להזזת העמודה">
+      <span className="th-name">
+        {c.label}
+        {c.sortable !== false && (
+          <span className="th-arrows">
+            <button className={sortCol === c.key && sortAsc ? 'on' : ''} onClick={() => { setSortCol(c.key); setSortAsc(true); }} aria-label={`מיון עולה לפי ${c.label}`}>▲</button>
+            <button className={sortCol === c.key && !sortAsc ? 'on' : ''} onClick={() => { setSortCol(c.key); setSortAsc(false); }} aria-label={`מיון יורד לפי ${c.label}`}>▼</button>
+          </span>
+        )}
       </span>
       {c.check && <small className="th-sub"><b className="good">✓</b> תקין · <b className="bad">✗</b> לא תקין</small>}
     </span>
   );
 
   const renderCell = (c, row, color) => {
+    const gc = c.group ? ` col-${c.group}` : '';
     switch (c.key) {
       case 'number': return <td key={c.key}>{row.number}</td>;
-      case 'foodTruckImageUrl': return <td key={c.key}>{row.foodTruckImageUrl ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb empty">—</span>}</td>;
+      case 'foodTruckImageUrl': return <td key={c.key}><span className="thumb-box">{row.foodTruckImageUrl ? <img src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb-empty">—</span>}</span></td>;
       case 'positionName': return (
         <td key={c.key} className="col-name">
           {editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : (
@@ -156,8 +168,8 @@ export default function PositionsTable({ positions, update, add, remove, selecte
       case 'complexName': return <td key={c.key}>{editMode ? <input value={row.complexName} onChange={e => update(row.id, { complexName: e.target.value })} /> : row.complexName}</td>;
       case 'businessName': return <td key={c.key}>{editMode ? <input value={row.businessName} onChange={e => update(row.id, { businessName: e.target.value })} /> : row.businessName}</td>;
       case 'water': case 'electricity': case 'sewage':
-        return <td key={c.key} className="center"><Mark value={row[c.key]} editMode={editMode} onChange={v => update(row.id, { [c.key]: v })} /></td>;
-      case 'buildingQuality': case 'environmentQuality': return <td key={c.key}><Chip value={row[c.key]} /></td>;
+        return <td key={c.key} className={`center${gc}`}><Mark value={row[c.key]} editMode={editMode} onChange={v => update(row.id, { [c.key]: v })} /></td>;
+      case 'buildingQuality': case 'environmentQuality': return <td key={c.key} className={gc.trim()}><Chip value={row[c.key]} /></td>;
       case 'notes': return <td key={c.key}>{editMode ? <input value={row.notes || ''} onChange={e => update(row.id, { notes: e.target.value })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>;
       case '_pin': {
         const pinned = row.mapPin && (Math.abs(row.mapPin.x - 34.6415) > 0.0001 || Math.abs(row.mapPin.y - 31.8014) > 0.0001);
@@ -177,13 +189,13 @@ export default function PositionsTable({ positions, update, add, remove, selecte
         <div><h2>רשימת עמדות</h2><p>{rows.length} מתוך {positions.length} עמדות · {editMode ? 'מצב עריכה' : 'לחיצה על עמדה פותחת פרטים'}</p></div>
         <div className="actions">
           <button className={grouped ? 'toggle on' : 'toggle'} onClick={() => setGrouped(!grouped)}>{grouped ? 'מקובץ לפי מתחם' : 'ללא קיבוץ'}</button>
-          {activeFilters.length > 0 && <button onClick={() => setFilters({})}>ניקוי סינון ({activeFilters.length})</button>}
+          <SliceWindow columns={SLICE_COLUMNS} rows={positions} conditions={conditions} setConditions={setConditions} />
           {orderChanged && <button onClick={() => saveOrder(COLUMNS.map(c => c.key))}>איפוס סדר עמודות</button>}
           {editMode && <button className="primary" onClick={() => setSelectedId(add())}>הוספת עמדה</button>}
           {editMode && <button onClick={() => selectedId && remove(selectedId)}>מחיקה</button>}
         </div>
       </div>
-      <p className="hint-line">אפשר לגרור כותרת עמודה כדי לסדר את הטבלה, ולבחור ערך מתחת לכותרת כדי לסנן רק לפי העמודה הזו.</p>
+      <p className="hint-line">מיון בחצים שליד שם העמודה, גרירת כותרת לסידור העמודות, ו"חיתוך נתונים" לבחירת עמודה וערך.</p>
       <div className="table-wrap">
         <table className="pos-table">
           <thead>
@@ -197,24 +209,9 @@ export default function PositionsTable({ positions, update, add, remove, selecte
                 <th key={c.key} className={`sortable ${c.group} ${dragKey === c.key ? 'dragging' : ''}`} {...dragProps(c)}><Label c={c} /></th>
               ))}
             </tr>
-            <tr className="filter-row">
-              {cols.map(c => (
-                <th key={c.key}>
-                  {c.filter === 'select' && (
-                    <select className="filter-input" value={filters[c.key] || ''} onChange={e => setFilters({ ...filters, [c.key]: e.target.value })} aria-label={`סינון לפי ${c.label}`}>
-                      <option value="">הכול</option>
-                      {optionsFor(c.key).map(o => <option key={o} value={o}>{c.check ? (o === 'טוב' ? 'תקין' : 'לא תקין') : o}</option>)}
-                    </select>
-                  )}
-                  {c.filter === 'text' && (
-                    <input className="filter-input" placeholder="חיפוש" value={filters[c.key] || ''} onChange={e => setFilters({ ...filters, [c.key]: e.target.value })} aria-label={`סינון לפי ${c.label}`} />
-                  )}
-                </th>
-              ))}
-            </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td colSpan={cols.length} className="empty-row">אין עמדות שמתאימות לסינון. אפשר לנקות את הסינון או את החיפוש בסרגל.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={cols.length} className="empty-row">אין עמדות שמתאימות לחיתוך או לחיפוש. אפשר לנקות את החיתוך או את החיפוש בסרגל.</td></tr>}
             {sections.map(sec => [
               sec.name !== null && (
                 <tr key={`h-${sec.name}`} className="complex-row">
