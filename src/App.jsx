@@ -7,6 +7,8 @@ import MapPage from './components/MapPage.jsx';
 import ReportsPage from './components/ReportsPage.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
 import usePositions from './hooks/usePositions.js';
+import useTrucks from './hooks/useTrucks.js';
+import TrucksPage from './components/TrucksPage.jsx';
 
 export default function App() {
   const [page, setPage] = useState('list');
@@ -16,7 +18,8 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const { positions, update, add, remove, duplicate, loading } = usePositions();
 
-  const selected = positions.find(p => p.id === selectedId) || null;
+  const { trucks, update: updateTruck } = useTrucks();
+  const selected =positions.find(p => p.id === selectedId) || null;
 
   useEffect(() => {
     const now = new Date();
@@ -70,6 +73,7 @@ export default function App() {
             setPinningId={setPinningId}
           />
         )}
+        {page === 'trucks' && <TrucksPage trucks={trucks} update={updateTruck} positions={positions} editMode={editMode} />}
         {page === 'reports' && <ReportsPage positions={positions} />}
         {page === 'settings' && <SettingsPage />}
       </main>

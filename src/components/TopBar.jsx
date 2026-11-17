@@ -1,6 +1,7 @@
 export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode }) {
   const tabs = [
     ['list', 'רשימת עמדות'],
+    ['trucks', 'פודטראקים'],
     ['map', 'מפת עמדות'],
     ['reports', 'דוחות'],
     ['settings', 'הגדרות']
