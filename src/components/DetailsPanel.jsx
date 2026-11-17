@@ -1,7 +1,8 @@
+import { statusColor } from '../utils/colors.js';
 import ImageUpload from './ImageUpload.jsx';
 
 const qualityOptions = ['טוב', 'לא טוב'];
-const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
+const approvalOptions = ['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל'];
 
 function Field({ label, children }) {
   return <label className="field"><span>{label}</span>{children}</label>;
@@ -13,7 +14,7 @@ function CheckField({ label, value, onChange, editMode }) {
     return (
       <div className="field">
         <span>{label}</span>
-        <span className={`check-mark-field-view ${isGood ? 'good' : 'bad'}`}>{isGood ? '✓ תקין' : '✗ לא תקין'}</span>
+        <span className={`check-mark-field-view ${isGood ? 'good' : 'bad'}`}>{isGood ? 'תקין' : 'לא תקין'}</span>
       </div>
     );
   }
@@ -21,7 +22,7 @@ function CheckField({ label, value, onChange, editMode }) {
     <div className="field">
       <span>{label}</span>
       <button type="button" className={`check-mark-field ${isGood ? 'good' : 'bad'}`} onClick={() => onChange(isGood ? 'לא טוב' : 'טוב')}>
-        {isGood ? '✓ תקין' : '✗ לא תקין'}
+        {isGood ? 'תקין' : 'לא תקין'}
       </button>
     </div>
   );
@@ -33,7 +34,7 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
 
   return (
     <aside className="details glass-panel">
-      <div className="panel-head"><h2>פרטי עמדה</h2><button className="ghost" onClick={onClose}>×</button></div>
+      <div className="panel-head"><h2>פרטי עמדה</h2><button className="ghost" onClick={onClose}>סגירה</button></div>
 
       {editMode ? (
         <ImageUpload value={selected.foodTruckImageUrl} onChange={v => set('foodTruckImageUrl', v)} alt={selected.foodTruckImageAlt || selected.positionName} />
@@ -81,7 +82,7 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
       {editMode ? (
         <Field label="האם העמדה מקובלת"><select value={selected.approval} onChange={e => update(selected.id, { approval: e.target.value, status: e.target.value })}>{approvalOptions.map(o => <option key={o}>{o}</option>)}</select></Field>
       ) : (
-        <div className="field"><span>האם מקובלת</span><span className={`chip ${selected.approval === 'מקובלת' ? 'green' : selected.approval === 'בבדיקה' ? 'orange' : 'red'}`}>{selected.approval}</span></div>
+        <div className="field"><span>האם מקובלת</span><span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span></div>
       )}
 
       {editMode ? (
@@ -92,12 +93,12 @@ export default function DetailsPanel({ selected, update, remove, duplicate, goPi
 
       <div className="pin-readout">
         {selected.mapPin && (Math.abs(selected.mapPin.x - 34.6415) > 0.0001 || Math.abs(selected.mapPin.y - 31.8014) > 0.0001)
-          ? <span className="pinned-badge inline">📌 נעוץ על המפה</span>
+          ? <span className="pinned-badge inline">נעוץ על המפה</span>
           : <span className="muted">לא נדקר על המפה</span>}
       </div>
 
       <div className="actions stacked">
-        <button className="primary" onClick={() => goPin(selected.id)}>📍 דקירה על המפה</button>
+        <button className="primary" onClick={() => goPin(selected.id)}>דקירה על המפה</button>
         {editMode && <button className="danger" onClick={() => { remove(selected.id); onClose(); }}>מחיקה</button>}
       </div>
     </aside>

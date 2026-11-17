@@ -197,15 +197,15 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
             <h3>{selected.positionName}</h3>
             <p>{selected.complexName} · {selected.businessName}</p>
             <div className="map-info-row">
-              <span className={`check-mark-small ${selected.water === 'טוב' ? 'good' : 'bad'}`}>{selected.water === 'טוב' ? '✓' : '✗'} מים</span>
-              <span className={`check-mark-small ${selected.electricity === 'טוב' ? 'good' : 'bad'}`}>{selected.electricity === 'טוב' ? '✓' : '✗'} חשמל</span>
-              <span className={`check-mark-small ${selected.sewage === 'טוב' ? 'good' : 'bad'}`}>{selected.sewage === 'טוב' ? '✓' : '✗'} ביוב</span>
+              <span className={`check-mark-small ${selected.water === 'טוב' ? 'good' : 'bad'}`}>מים: {selected.water === 'טוב' ? 'תקין' : 'לא תקין'}</span>
+              <span className={`check-mark-small ${selected.electricity === 'טוב' ? 'good' : 'bad'}`}>חשמל: {selected.electricity === 'טוב' ? 'תקין' : 'לא תקין'}</span>
+              <span className={`check-mark-small ${selected.sewage === 'טוב' ? 'good' : 'bad'}`}>ביוב: {selected.sewage === 'טוב' ? 'תקין' : 'לא תקין'}</span>
             </div>
             <div className="map-info-status">
               <span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span>
             </div>
-            {isPinned(selected.mapPin) && <p className="map-info-coords">📌 {selected.mapPin.x.toFixed(5)}, {selected.mapPin.y.toFixed(5)}</p>}
-            <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>📍 סמן מיקום על המפה</button>
+            {isPinned(selected.mapPin) && <p className="map-info-coords">נעוץ: {selected.mapPin.x.toFixed(5)}, {selected.mapPin.y.toFixed(5)}</p>}
+            <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>סמן מיקום על המפה</button>
           </div>
         )}
       </div>

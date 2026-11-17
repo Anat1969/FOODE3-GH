@@ -43,13 +43,13 @@ export default function ImageUpload({ value, onChange, alt }) {
         <div className="image-preview">
           <img src={value} alt={alt || 'תמונת פודטראק'} />
           <div className="image-overlay">
-            <button type="button" onClick={() => onChange('')}>✗ הסר</button>
+            <button type="button" onClick={() => onChange('')}>הסר</button>
             <button type="button" onClick={() => inputRef.current?.click()}>החלף</button>
           </div>
         </div>
       ) : (
         <div className="image-dropzone" onClick={() => inputRef.current?.click()}>
-          <span className="upload-icon">📷</span>
+          
           <p>גררי תמונה, הדביקי (Ctrl+V) או לחצי לבחירה</p>
         </div>
       )}

@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import Chip from './Chip.jsx';
+import { approvalKind } from '../utils/colors.js';
 
-const approvalOptions = ['מקובלת', 'בבדיקה', 'לא מקובלת'];
+const approvalOptions = ['מיקום מקובל', 'בבדיקה', 'מיקום לא מקובל'];
 
 function CheckMark({ value, onChange, editMode }) {
   const isGood = value === 'טוב';
   if (!editMode) {
-    return <span className={`check-mark-view ${isGood ? 'good' : 'bad'}`}>{isGood ? '✓' : '✗'}</span>;
+    return <span className={`check-mark-view ${isGood ? 'good' : 'bad'}`}>{isGood ? 'תקין' : 'לא תקין'}</span>;
   }
   return (
     <button
       className={`check-mark ${isGood ? 'good' : 'bad'}`}
       onClick={(e) => { e.stopPropagation(); onChange(isGood ? 'לא טוב' : 'טוב'); }}
     >
-      {isGood ? '✓' : '✗'}
+      {isGood ? 'תקין' : 'לא תקין'}
     </button>
   );
 }
@@ -29,7 +30,7 @@ function InlineSelect({ value, onChange, options, type }) {
 const VALUE_RANK = {
   'טוב': 0, 'לא טוב': 1,
   'יש': 0, 'אין': 1,
-  'מקובלת': 0, 'בבדיקה': 1, 'לא מקובלת': 2,
+  'מיקום מקובל': 0, 'בבדיקה': 1, 'מיקום לא מקובל': 2,
 };
 
 function compareValues(a, b) {
@@ -77,7 +78,7 @@ export default function PositionsTable({ positions, update, add, remove, selecte
     return sortAsc ? cmp : -cmp;
   });
 
-  const approvalClass = (val) => val === 'מקובלת' ? 'green' : val === 'בבדיקה' ? 'orange' : 'red';
+  const approvalClass = (val) => ({ approved: 'green', pending: 'orange', rejected: 'red' }[approvalKind(val)] || 'gray');
 
   return (
     <section className="table-shell glass-panel">
@@ -111,7 +112,7 @@ export default function PositionsTable({ positions, update, add, remove, selecte
               <tr key={row.id} className={`${selectedId === row.id ? 'selected' : ''} approval-${approvalClass(row.approval)}`} onClick={() => setSelectedId(row.id)}>
                 <td>{row.number}</td>
                 <td>{row.foodTruckImageUrl ? <img className="thumb" src={row.foodTruckImageUrl} alt={row.foodTruckImageAlt || row.positionName} /> : <span className="thumb empty">—</span>}</td>
-                <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}</td>
+                <td className="col-name">{editMode ? <input value={row.positionName} onChange={e => update(row.id, { positionName: e.target.value })} /> : <strong>{row.positionName}</strong>}{selectedId === row.id && <span className="selected-tag">נבחר</span>}</td>
                 <td>
                   {editMode ? (
                     <InlineSelect value={row.approval} options={approvalOptions} type="status" onChange={v => update(row.id, { approval: v, status: v })} />
@@ -129,8 +130,8 @@ export default function PositionsTable({ positions, update, add, remove, selecte
                 <td>{editMode ? <input value={row.notes || ''} onChange={e => update(row.id, { notes: e.target.value })} /> : <span className="notes-text">{row.notes || '—'}</span>}</td>
                 <td>
                   {(row.mapPin && (Math.abs(row.mapPin.x - 34.6415) > 0.0001 || Math.abs(row.mapPin.y - 31.8014) > 0.0001))
-                    ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📌 נעוץ</span>
-                    : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>📍</button>}
+                    ? <span className="pinned-badge" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>נעוץ</span>
+                    : <button className="pin-button" onClick={(e) => { e.stopPropagation(); goPin(row.id); }}>סימון</button>}
                 </td>
               </tr>
             ))}

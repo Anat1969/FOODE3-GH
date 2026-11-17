@@ -1,8 +1,9 @@
+import { approvalKind } from '../utils/colors.js';
 export default function StatsRail({ positions }) {
   const total = positions.length;
-  const approved = positions.filter(p => p.approval === 'מקובלת').length;
-  const pending = positions.filter(p => p.approval === 'בבדיקה').length;
-  const rejected = positions.filter(p => p.approval === 'לא מקובלת').length;
+  const approved = positions.filter(p => approvalKind(p.approval) === 'approved').length;
+  const pending = positions.filter(p => approvalKind(p.approval) === 'pending').length;
+  const rejected = positions.filter(p => approvalKind(p.approval) === 'rejected').length;
   const pct = total ? Math.round((approved / total) * 100) : 0;
   return (
     <section className="stats-rail">
