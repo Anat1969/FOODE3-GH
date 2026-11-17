@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import TopBar from './components/TopBar.jsx';
-import StatsRail from './components/StatsRail.jsx';
+import HomePage from './components/HomePage.jsx';
 import PositionsTable from './components/PositionsTable.jsx';
 import DetailsPanel from './components/DetailsPanel.jsx';
 import MapPage from './components/MapPage.jsx';
@@ -11,15 +11,20 @@ import useTrucks from './hooks/useTrucks.js';
 import TrucksPage from './components/TrucksPage.jsx';
 
 export default function App() {
-  const [page, setPage] = useState('list');
+  const [page, setPage] = useState('home');
   const [selectedId, setSelectedId] = useState(null);
   const [pinningId, setPinningId] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const { positions, update, add, remove, duplicate, loading } = usePositions();
+  const { positions: allPositions, update, add, remove, duplicate, loading } = usePositions();
+  const [query, setQuery] = useState('');
 
-  const { trucks, update: updateTruck } = useTrucks();
-  const selected =positions.find(p => p.id === selectedId) || null;
+  const { trucks: allTrucks, update: updateTruck } = useTrucks();
+  const q = query.trim();
+  const has = (...vals) => vals.some(v => String(v ?? '').includes(q));
+  const positions = q ? allPositions.filter(p => has(p.number, p.positionName, p.complexName, p.businessName, p.notes, p.approval)) : allPositions;
+  const trucks = q ? allTrucks.filter(t => has(t.number, t.ownerName, t.businessLabel, t.location, t.ownerType, t.phone, t.status)) : allTrucks;
+  const selected = allPositions.find(p => p.id === selectedId) || null;
 
   useEffect(() => {
     const now = new Date();
@@ -36,9 +41,12 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <TopBar page={page} setPage={setPage} lastSaved={lastSaved} editMode={editMode} setEditMode={setEditMode} />
-      <StatsRail positions={positions} />
+      <TopBar page={page} setPage={setPage} lastSaved={lastSaved} editMode={editMode} setEditMode={setEditMode} query={query} setQuery={setQuery} found={q ? positions.length + trucks.length : null} />
       <main className="main-area">
+        {page === 'home' && (
+          <HomePage positions={allPositions} trucks={allTrucks} setPage={setPage}
+            mapProps={{ update, selectedId, setSelectedId, pinningId, setPinningId }} />
+        )}
         {page === 'list' && (
           <div className="list-layout">
             <DetailsPanel
@@ -73,7 +81,7 @@ export default function App() {
             setPinningId={setPinningId}
           />
         )}
-        {page === 'trucks' && <TrucksPage trucks={trucks} update={updateTruck} positions={positions} editMode={editMode} />}
+        {page === 'trucks' && <TrucksPage trucks={trucks} update={updateTruck} positions={allPositions} editMode={editMode} />}
         {page === 'reports' && <ReportsPage positions={positions} />}
         {page === 'settings' && <SettingsPage />}
       </main>
