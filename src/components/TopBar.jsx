@@ -6,6 +6,7 @@ export const RESEARCH_URL = 'https://claude.ai/project/019e3627-fb8b-769c-8380-1
 
 export const TABS = [
   ['list', 'רשימת עמדות'],
+  ['trucks', 'פודטראקים'],
   ['map', 'מפת עמדות'],
   ['report', 'דוח לטיפול'],
   ['examples', 'דוגמאות'],
