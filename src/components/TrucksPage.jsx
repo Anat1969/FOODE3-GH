@@ -22,6 +22,7 @@ export default function TrucksPage({ trucks, update, positions, editMode }) {
         <div>
           <h2>פודטראקים והסכמים</h2>
           <p>{trucks.length} הסכמים פעילים · {soon} מסתיימים ב-6 החודשים הקרובים</p>
+          <p className={`mode-tag ${editMode ? 'edit' : 'view'}`}>{editMode ? 'עריכה: כל שדה נשמר מעצמו' : 'תצוגה בלבד: עריכה דרך קישור העריכה'}</p>
         </div>
       </div>
       <div className="table-wrap">

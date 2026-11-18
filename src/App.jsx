@@ -92,7 +92,7 @@ export default function App() {
   }, [notify]);
 
   const { positions, update, add, remove, loading, loadError, retry, saveState } = usePositions({ onError });
-  const trucksData = useTrucks();
+  const trucksData = useTrucks({ onError });
   const docs = useRecords('documents', { onError });
   const events = useRecords('position_events', { onError });
 
