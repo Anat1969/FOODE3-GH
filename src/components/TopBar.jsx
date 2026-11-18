@@ -5,8 +5,8 @@ export const DEV_CHAT_URL = 'https://claude.ai/code/session_01ELjmgCtCVbBT1AstY1
 export const RESEARCH_URL = 'https://claude.ai/project/019e3627-fb8b-769c-8380-1daf25bcf8b7';
 
 export const TABS = [
-  ['list', 'רשימת עמדות'],
-  ['trucks', 'פודטראקים'],
+  ['list', 'מיקומי עמדות'],
+  ['trucks', 'בעלי פודטראק'],
   ['map', 'מפת עמדות'],
   ['report', 'דוח לטיפול'],
   ['examples', 'דוגמאות'],

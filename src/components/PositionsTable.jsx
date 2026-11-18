@@ -143,7 +143,7 @@ export default function PositionsTable({
     <section className="table-shell panel">
       <div className="section-title">
         <div>
-          <h2>רשימת עמדות</h2>
+          <h2>מיקומי עמדות</h2>
           {statsFilter && (
             <div className="filter-badge">
               מסנן: {FILTER_LABELS[statsFilter] || statsFilter.replace('complex:', 'מתחם ')} ({positions.length} מתוך {allPositions.length})

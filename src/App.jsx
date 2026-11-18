@@ -260,6 +260,7 @@ export default function App() {
               openCard={openCard}
               startPin={startPin}
               canEdit={Boolean(editor)}
+              logEmail={(id, to, n) => getEditorKey() && events.save(crypto.randomUUID(), { position_id: id, kind: 'email', body: `נשלח מייל ליזם (${to}) על ${n} פריטים לטיפול`, author: editor || '', meta: { to } }).catch(() => {})}
             />}
           {page === 'examples' && <ExamplesPage editMode={Boolean(editor)} onError={onError} />}
           {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} canEdit={Boolean(editor)} onError={onError} />}

@@ -28,7 +28,7 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
   };
 
   return (
-    <div className="example-card panel">
+    <div className={`example-card panel ${item.type === 'bad' ? 'bad' : 'good'}`}>
       <div className="example-image-wrap">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.title || 'דוגמה'} className="example-image" />
@@ -47,7 +47,7 @@ function ExampleCard({ item, onUpdate, onDelete, editMode }) {
           </>
         )}
       </div>
-      <div className="example-content">
+      <div className="example-content example-caption">
         {editMode ? (
           <>
             <input
@@ -88,8 +88,8 @@ export default function ExamplesPage({ editMode, onError }) {
       <div className="examples-split">
         <div className="examples-column good">
           <div className="examples-col-header good">
-            <h3>דוגמאות טובות</h3>
-            {editMode && <button className="icon-btn add examples-add" aria-label="הוספת דוגמה טובה" title="הוספה" onClick={() => addExample('good')}>+</button>}
+            <h3>מותר</h3><span className="examples-count">{good.length}</span>
+            {editMode && <button className="icon-btn add examples-add" aria-label="הוספת דוגמה למותר" title="הוספה" onClick={() => addExample('good')}>+</button>}
           </div>
           <div className="examples-grid">
             {good.length === 0 && <p className="muted examples-empty">אין</p>}
@@ -107,8 +107,8 @@ export default function ExamplesPage({ editMode, onError }) {
         <div className="examples-divider" />
         <div className="examples-column bad">
           <div className="examples-col-header bad">
-            <h3>דוגמאות רעות</h3>
-            {editMode && <button className="icon-btn add examples-add" aria-label="הוספת דוגמה רעה" title="הוספה" onClick={() => addExample('bad')}>+</button>}
+            <h3>אסור</h3><span className="examples-count">{bad.length}</span>
+            {editMode && <button className="icon-btn add examples-add" aria-label="הוספת דוגמה לאסור" title="הוספה" onClick={() => addExample('bad')}>+</button>}
           </div>
           <div className="examples-grid">
             {bad.length === 0 && <p className="muted examples-empty">אין</p>}

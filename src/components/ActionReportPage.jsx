@@ -28,7 +28,7 @@ function buildCategories(positions, openCorrectionsById) {
     if (p.approval !== 'מיקום מקובל') at.approval.push({ key: `${p.id}:approval`, p, label: 'סטטוס מיקום', kind: 'select', field: 'approval', options: APPROVAL_OPTIONS, tone: approvalTone });
     const corrections = openCorrectionsById[p.id] || 0;
     if (p.harmonicaStatus === 'הוגשה') at.harmonica.push({ key: `${p.id}:harm`, p, label: 'אישור ההרמוניקה', kind: 'approve' });
-    else if (p.harmonicaStatus === 'נדרש תיקון' || corrections) at.harmonica.push({ key: `${p.id}:fix`, p, label: corrections === 1 ? 'הערה אחת לתיקון פתוחה' : corrections ? `${corrections} הערות לתיקון פתוחות` : 'נדרש תיקון', kind: 'open', tab: 'harmonica' });
+    else if (p.harmonicaStatus === 'נדרש תיקון' || corrections) at.harmonica.push({ key: `${p.id}:fix`, p, label: corrections === 1 ? 'הערה אחת לתיקון פתוחה' : corrections ? `${corrections} הערות לתיקון פתוחות` : 'נדרש תיקון', kind: 'open', tab: 'harmonica', group: 'הערות לתיקון פתוחות' });
     else if (!p.harmonicaStatus || p.harmonicaStatus === 'לא הוגשה') at.harmonica.push({ key: `${p.id}:upload`, p, label: 'העלאת הרמוניקה', kind: 'open', tab: 'harmonica' });
     if (!p.developerName) at.details.push({ key: `${p.id}:devname`, p, label: 'שם היזם', kind: 'text', field: 'developerName' });
     if (!p.developerEmail) at.details.push({ key: `${p.id}:devmail`, p, label: 'דוא"ל היזם', kind: 'text', field: 'developerEmail', type: 'email' });
@@ -36,8 +36,55 @@ function buildCategories(positions, openCorrectionsById) {
     if (!isPinned(p.mapPin)) at.details.push({ key: `${p.id}:pin`, p, label: 'מיקום על המפה', kind: 'pin' });
   }
   const byNumber = (a, b) => (Number(a.p.number) || 0) - (Number(b.p.number) || 0);
-  cats.forEach(c => c.items.sort(byNumber));
+  cats.forEach(c => {
+    c.items.sort(byNumber);
+    c.items.forEach(i => { i.cat = c.id; i.catTitle = c.title; i.group = i.group || i.label; });
+  });
   return cats;
+}
+
+const NO_OWNER = 'ללא בעל עסק מוגדר';
+const ownerOf = (p) => (p.developerName || p.ownerName || '').trim();
+
+// What the business owner can act on: not the municipality's own approval step and not internal missing details.
+const mailable = (i) => i.cat !== 'details' && i.kind !== 'approve';
+const mailLine = (i) => {
+  if (i.kind === 'select') return `${i.label}: ${i.p[i.field] || 'לא הוגדר'}`;
+  if (i.kind === 'check') return `${i.label}: לא תקין`;
+  return i.label;
+};
+
+function groupByOwner(categories) {
+  const map = new Map();
+  for (const item of categories.flatMap(c => c.items)) {
+    const name = ownerOf(item.p) || NO_OWNER;
+    if (!map.has(name)) map.set(name, { name, email: '', items: [] });
+    const g = map.get(name);
+    g.items.push(item);
+    if (!g.email && item.p.developerEmail) g.email = item.p.developerEmail;
+  }
+  const byPos = (a, b) => (Number(a.p.number) || 0) - (Number(b.p.number) || 0);
+  map.forEach(g => g.items.sort(byPos));
+  return [...map.values()].sort((a, b) => (a.name === NO_OWNER) - (b.name === NO_OWNER) || b.items.length - a.items.length);
+}
+
+function ownerMail(group) {
+  const todo = group.items.filter(mailable);
+  const byPosition = new Map();
+  todo.forEach(i => { byPosition.set(i.p.id, [...(byPosition.get(i.p.id) || []), i]); });
+  const lines = [`שלום ${group.name},`, '', 'בבדיקת העמדות שבאחריותך נדרשים הטיפולים הבאים:', ''];
+  byPosition.forEach(list => {
+    const p = list[0].p;
+    lines.push(`עמדה ${p.number} – ${p.positionName}:`);
+    list.forEach(i => lines.push(`- ${mailLine(i)}`));
+    lines.push('');
+  });
+  lines.push('נודה לטיפולך.', 'אדריכלות העיר, עיריית אשדוד');
+  return {
+    count: todo.length,
+    positionIds: [...byPosition.keys()],
+    href: `mailto:${encodeURIComponent(group.email)}?subject=${encodeURIComponent('פריטים לטיפול בעמדות שלך')}&body=${encodeURIComponent(lines.join('\n'))}`,
+  };
 }
 
 function TextFix({ item, onSave }) {
@@ -58,18 +105,20 @@ function TextFix({ item, onSave }) {
   );
 }
 
-export default function ActionReportPage({ positions, openCorrectionsById = {}, update, changeApproval, approveHarmonica, openCard, startPin, canEdit }) {
+export default function ActionReportPage({ positions, openCorrectionsById = {}, update, changeApproval, approveHarmonica, openCard, startPin, canEdit, logEmail }) {
+  const [view, setView] = useState('topic'); // topic | owner
   const [open, setOpen] = useState(() => new Set());
   const [handled, setHandled] = useState([]); // resolved in this visit, kept visible with a strike-through and undo
   const categories = useMemo(() => buildCategories(positions, openCorrectionsById), [positions, openCorrectionsById]);
   const total = categories.reduce((s, c) => s + c.items.length, 0);
+  const owners = useMemo(() => groupByOwner(categories), [categories]);
 
   // Printing shows every category open.
   useEffect(() => {
-    const before = () => setOpen(new Set(categories.map(c => c.id)));
+    const before = () => setOpen(new Set([...categories.map(c => c.id), ...owners.map(o => `o:${o.name}`)]));
     window.addEventListener('beforeprint', before);
     return () => window.removeEventListener('beforeprint', before);
-  }, [categories]);
+  }, [categories, owners]);
 
   const toggle = (id) => setOpen(prev => {
     const next = new Set(prev);
@@ -94,15 +143,84 @@ export default function ActionReportPage({ positions, openCorrectionsById = {}, 
     setHandled(list => list.filter(x => x.key !== h.key));
   };
 
+  const sendMail = (group) => {
+    const mail = ownerMail(group);
+    if (!group.email) return;
+    window.location.href = mail.href;
+    mail.positionIds.forEach(id => logEmail?.(id, group.email, group.items.filter(i => mailable(i) && i.p.id === id).length));
+  };
+
+  const renderRow = (item) => (
+    <li key={item.key} className="fix-row">
+      {item.kind === 'check' || item.kind === 'approve' ? (
+        <input
+          type="checkbox"
+          className="fix-check"
+          aria-label={`${item.label} טופל, עמדה ${item.p.number}`}
+          disabled={!canEdit}
+          checked={false}
+          onChange={() => {
+            if (item.kind === 'approve') {
+              approveHarmonica(item.p.id, true);
+              remember(item, item.cat, () => approveHarmonica(item.p.id, false));
+            } else resolve(item, item.cat, item.done);
+          }}
+        />
+      ) : <span className="fix-check-space" />}
+      <button type="button" className="fix-pos" onClick={() => openCard(item.p.id, item.tab || 'details')}>
+        <span className="mono-label">{item.p.number}</span> {item.p.positionName}
+      </button>
+      <span className="fix-label">{view === 'owner' ? `${item.catTitle}: ${item.label}` : item.label}</span>
+      <span className="fix-control">
+        {item.kind === 'select' && (canEdit ? (
+          <select className={`pill-select tone-${item.tone(item.p[item.field])}`} value={item.p[item.field] || ''} onChange={e => resolve(item, item.cat, e.target.value)}>
+            {withCurrent(item.options, item.p[item.field]).map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ) : <span className={`pill ${item.tone(item.p[item.field])}`}>{item.p[item.field]}</span>)}
+        {item.kind === 'text' && canEdit && <TextFix item={item} onSave={v => resolve(item, item.cat, v)} />}
+        {item.kind === 'open' && <button type="button" className="btn small" onClick={() => openCard(item.p.id, item.tab)}>פתיחה</button>}
+        {item.kind === 'pin' && canEdit && <button type="button" className="btn small" onClick={() => startPin(item.p.id)}>סימון</button>}
+      </span>
+    </li>
+  );
+
+  const renderHandled = (h) => (
+    <li key={h.key} className="fix-row handled">
+      <input type="checkbox" className="fix-check" checked aria-label={`ביטול: ${h.label}, עמדה ${h.p.number}`} onChange={() => undo(h)} />
+      <span className="fix-pos"><span className="mono-label">{h.p.number}</span> {h.p.positionName}</span>
+      <span className="fix-label">{h.label}</span>
+      <span className="fix-control" />
+    </li>
+  );
+
+  // Inside a topic, items sharing the same issue sit together, so one fix can be applied the same way everywhere.
+  const renderTopicItems = (items) => {
+    const groups = [];
+    items.forEach(i => {
+      const g = groups.find(x => x.name === i.group);
+      if (g) g.items.push(i); else groups.push({ name: i.group, items: [i] });
+    });
+    return groups.map(g => (
+      <li key={g.name} className="fix-group-wrap">
+        <div className="fix-group"><span>{g.name}</span><span className="mono-label">{g.items.length}</span></div>
+        <ul className="fix-list inner">{g.items.map(renderRow)}</ul>
+      </li>
+    ));
+  };
+
   return (
     <section className="action-report report-v2">
       <div className="report-head">
         <h2>דוח לטיפול</h2>
         <span className="mono-label">{total} פריטים פתוחים</span>
-        <button type="button" className="btn small print-btn" onClick={() => { setOpen(new Set(categories.map(c => c.id))); setTimeout(() => window.print(), 50); }}>הדפסה</button>
+        <div className="report-views" role="tablist" aria-label="חלוקת הדוח">
+          <button type="button" role="tab" aria-selected={view === 'topic'} className={`btn small ${view === 'topic' ? 'primary' : ''}`} onClick={() => setView('topic')}>לפי נושא</button>
+          <button type="button" role="tab" aria-selected={view === 'owner'} className={`btn small ${view === 'owner' ? 'primary' : ''}`} onClick={() => setView('owner')}>לפי בעל עסק</button>
+        </div>
+        <button type="button" className="btn small print-btn" onClick={() => { setOpen(new Set([...categories.map(c => c.id), ...owners.map(o => `o:${o.name}`)])); setTimeout(() => window.print(), 50); }}>הדפסה</button>
       </div>
 
-      <div className="report-cats">
+      {view === 'topic' && <div className="report-cats">
         {categories.map(cat => {
           const isOpen = open.has(cat.id);
           const done = handled.filter(h => h.cat === cat.id);
@@ -128,47 +246,8 @@ export default function ActionReportPage({ positions, openCorrectionsById = {}, 
                   >
                     {cat.items.length === 0 && done.length === 0 && <p className="card-empty">אין פריטים פתוחים</p>}
                     <ul className="fix-list">
-                      {cat.items.map(item => (
-                        <li key={item.key} className="fix-row">
-                          {item.kind === 'check' || item.kind === 'approve' ? (
-                            <input
-                              type="checkbox"
-                              className="fix-check"
-                              aria-label={`${item.label} טופל, עמדה ${item.p.number}`}
-                              disabled={!canEdit}
-                              checked={false}
-                              onChange={() => {
-                                if (item.kind === 'approve') {
-                                  approveHarmonica(item.p.id, true);
-                                  remember(item, cat.id, () => approveHarmonica(item.p.id, false));
-                                } else resolve(item, cat.id, item.done);
-                              }}
-                            />
-                          ) : <span className="fix-check-space" />}
-                          <button type="button" className="fix-pos" onClick={() => openCard(item.p.id, item.tab || 'details')}>
-                            <span className="mono-label">{item.p.number}</span> {item.p.positionName}
-                          </button>
-                          <span className="fix-label">{item.label}</span>
-                          <span className="fix-control">
-                            {item.kind === 'select' && (canEdit ? (
-                              <select className={`pill-select tone-${item.tone(item.p[item.field])}`} value={item.p[item.field] || ''} onChange={e => resolve(item, cat.id, e.target.value)}>
-                                {withCurrent(item.options, item.p[item.field]).map(o => <option key={o} value={o}>{o}</option>)}
-                              </select>
-                            ) : <span className={`pill ${item.tone(item.p[item.field])}`}>{item.p[item.field]}</span>)}
-                            {item.kind === 'text' && canEdit && <TextFix item={item} onSave={v => resolve(item, cat.id, v)} />}
-                            {item.kind === 'open' && <button type="button" className="btn small" onClick={() => openCard(item.p.id, item.tab)}>פתיחה</button>}
-                            {item.kind === 'pin' && canEdit && <button type="button" className="btn small" onClick={() => startPin(item.p.id)}>סימון</button>}
-                          </span>
-                        </li>
-                      ))}
-                      {done.map(h => (
-                        <li key={h.key} className="fix-row handled">
-                          <input type="checkbox" className="fix-check" checked aria-label={`ביטול: ${h.label}, עמדה ${h.p.number}`} onChange={() => undo(h)} />
-                          <span className="fix-pos"><span className="mono-label">{h.p.number}</span> {h.p.positionName}</span>
-                          <span className="fix-label">{h.label}</span>
-                          <span className="fix-control" />
-                        </li>
-                      ))}
+                      {renderTopicItems(cat.items)}
+                      {done.map(renderHandled)}
                     </ul>
                   </motion.div>
                 )}
@@ -176,7 +255,56 @@ export default function ActionReportPage({ positions, openCorrectionsById = {}, 
             </div>
           );
         })}
-      </div>
+      </div>}
+
+      {view === 'owner' && (
+        <div className="report-cats">
+          {owners.length === 0 && <p className="card-empty">אין פריטים פתוחים</p>}
+          {owners.map(g => {
+            const id = `o:${g.name}`;
+            const isOpen = open.has(id);
+            const doneHere = handled.filter(h => g.items.some(i => i.p.id === h.p.id));
+            const todo = g.items.filter(mailable).length;
+            const positions = new Set(g.items.map(i => i.p.id)).size;
+            return (
+              <div key={id} className={`report-cat ${isOpen ? 'open' : ''}`}>
+                <div className="report-cat-headrow">
+                  <button type="button" className="report-cat-head owner" aria-expanded={isOpen} onClick={() => toggle(id)}>
+                    <span className="report-cat-title">{g.name}<small> · {positions} {positions === 1 ? 'עמדה' : 'עמדות'}</small></span>
+                    <span className="report-cat-count">{g.items.length}</span>
+                    <span className="report-cat-chevron" aria-hidden="true">{isOpen ? '−' : '+'}</span>
+                  </button>
+                  {g.name !== NO_OWNER && (
+                    <button
+                      type="button"
+                      className="btn small owner-mail"
+                      disabled={!g.email || !todo}
+                      title={g.email ? `${g.email}` : 'חסר דוא"ל יזם בכרטיס העמדה'}
+                      onClick={() => sendMail(g)}
+                    >{g.email ? `מייל לבעל העסק (${todo})` : 'חסר דוא"ל'}</button>
+                  )}
+                </div>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      className="report-cat-body"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.22 }}
+                    >
+                      <ul className="fix-list">
+                        {g.items.map(renderRow)}
+                        {doneHere.map(renderHandled)}
+                      </ul>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
