@@ -18,7 +18,9 @@
 .p3d-label.bad b { color: var(--red); }
 .p3d-label.warn { border-color: var(--orange); }
 .p3d-label.warn b { color: var(--orange); }
-.p3d-tools { position: absolute; top: 10px; inset-inline-start: 10px; display: flex; gap: 6px; z-index: 2; }
+.p3d-tools { position: absolute; top: 10px; inset-inline-start: 10px; inset-inline-end: 10px; display: flex; flex-wrap: wrap; gap: 6px; z-index: 2; }
+.p3d-modes { display: flex; gap: 4px; }
+.p3d-tools .btn { padding: 6px 12px; }
 .p3d-legend { position: absolute; bottom: 10px; inset-inline-start: 10px; display: flex; gap: 12px; font-size: 12px; color: var(--text-muted); background: var(--surface-solid); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); z-index: 2; }
 .p3d-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 5px; }
 .p3d-legend .g { background: var(--green); } .p3d-legend .r { background: var(--red); } .p3d-legend .a { background: var(--orange); }

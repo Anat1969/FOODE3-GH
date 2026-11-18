@@ -130,9 +130,9 @@ export function createPolicyScene(container, onReady) {
   readPalette();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(C.bg);
-  scene.fog = new THREE.Fog(C.bg, 70, 160);
+  scene.fog = new THREE.Fog(C.bg, 160, 380);
 
-  const camera = new THREE.PerspectiveCamera(45, w() / h(), 0.1, 400);
+  const camera = new THREE.PerspectiveCamera(45, w() / h(), 0.1, 800);
   camera.position.set(...VIEWS.overview.pos);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -148,8 +148,9 @@ export function createPolicyScene(container, onReady) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI / 2.05;
+  controls.screenSpacePanning = true;
   controls.minDistance = 2;
-  controls.maxDistance = 90;
+  controls.maxDistance = 260;
   controls.target.set(...VIEWS.overview.target);
 
   scene.add(new THREE.HemisphereLight(0xffffff, C.light ? 0x9aa4ad : 0x1b2430, C.light ? 1.5 : 1.1));
@@ -304,12 +305,54 @@ export function createPolicyScene(container, onReady) {
 
   Object.values(groups).forEach(g => { g.visible = false; });
 
-  // אנימציית מצלמה
+  // מסגרת לכל שלב (מרכז ורדיוס), למצבי המבט הקבועים.
+  const FRAMES = {
+    place: { t: [2, 0.4, 0], r: 11 },
+    design: { t: [0.3, 1.6, 0], r: 5 },
+    access: { t: [0.6, 0.8, 2], r: 4.4 },
+    ops: { t: [0, 0.5, 0], r: 12 },
+    bans: { t: [0, 1.2, 0.8], r: 6.2 },
+    permit: { t: [13, 1.2, 0], r: 9 },
+  };
+  // כיווני המצלמה: איזומטרי (35° גובה, 45° סיבוב), חזית, ומבט על. עדשה צרה כמעט מבטלת פרספקטיבה.
+  const DIRS = { iso: [1, 0.82, 1], front: [0, 0.1, 1], top: [0, 1, 0.0008] };
+  let step = 'place';
+  let mode = 'free';
   let goal = null;
-  const setView = (id) => {
-    Object.entries(groups).forEach(([k, g]) => { g.visible = k === id; });
-    const v = VIEWS[id] || VIEWS.overview;
-    goal = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target) };
+
+  const apply = () => {
+    Object.entries(groups).forEach(([k, g]) => { g.visible = k === step; });
+    if (mode === 'free') {
+      const v = VIEWS[step] || VIEWS.overview;
+      goal = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target), fov: 45 };
+      return;
+    }
+    const f = FRAMES[step] || FRAMES.place;
+    const fov = 14;
+    const d = f.r / Math.sin(THREE.MathUtils.degToRad(fov / 2));
+    const dir = new THREE.Vector3(...DIRS[mode]).normalize();
+    const target = new THREE.Vector3(...f.t);
+    goal = { pos: target.clone().addScaledVector(dir, d), target, fov };
+  };
+  const setView = (id) => { step = id; apply(); };
+  const setMode = (m) => { mode = m; apply(); };
+
+  // מניעת חפיפה בין תוויות: כל תווית שחופפת לקודמת נדחפת מטה.
+  const declutter = () => {
+    const els = Array.from(labels.domElement.querySelectorAll('.p3d-label')).filter(e => e.style.display !== 'none');
+    els.forEach(e => { e.style.marginTop = '0px'; });
+    const items = els.map(e => ({ e, r: e.getBoundingClientRect() })).sort((x, y) => x.r.top - y.r.top);
+    const placed = [];
+    items.forEach(({ e, r }) => {
+      let dy = 0;
+      for (let guard = 0; guard < 12; guard++) {
+        const hit = placed.find(q => r.left < q.right && r.right > q.left && r.top + dy < q.bottom + 3 && r.bottom + dy > q.top - 3);
+        if (!hit) break;
+        dy = hit.bottom + 3 - r.top;
+      }
+      if (dy) e.style.marginTop = `${Math.round(dy)}px`;
+      placed.push({ left: r.left, right: r.right, top: r.top + dy, bottom: r.bottom + dy });
+    });
   };
 
   let raf = 0;
@@ -317,15 +360,18 @@ export function createPolicyScene(container, onReady) {
   const tick = () => {
     raf = requestAnimationFrame(tick);
     if (goal) {
-      camera.position.lerp(goal.pos, 0.07);
-      controls.target.lerp(goal.target, 0.07);
-      if (camera.position.distanceTo(goal.pos) < 0.05) goal = null;
+      camera.position.lerp(goal.pos, 0.08);
+      controls.target.lerp(goal.target, 0.08);
+      camera.fov += (goal.fov - camera.fov) * 0.08;
+      camera.updateProjectionMatrix();
+      if (camera.position.distanceTo(goal.pos) < 0.02 * Math.max(1, goal.pos.distanceTo(goal.target)) && Math.abs(camera.fov - goal.fov) < 0.1) goal = null;
     }
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 1.2;
     controls.update();
     renderer.render(scene, camera);
     labels.render(scene, camera);
+    declutter();
   };
   tick();
 
@@ -343,6 +389,7 @@ export function createPolicyScene(container, onReady) {
 
   return {
     setView,
+    setMode,
     setAutoRotate: (v) => { autoRotate = v; },
     dispose() {
       cancelAnimationFrame(raf);

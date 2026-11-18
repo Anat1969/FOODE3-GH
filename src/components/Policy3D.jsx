@@ -8,6 +8,8 @@ function Rich({ text }) {
   return text.split('**').map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
 }
 
+const MODES = [['free', 'חופשי'], ['iso', 'איזומטרי'], ['top', 'מבט על'], ['front', 'חזית']];
+
 function readTheme() {
   return document.documentElement.getAttribute('data-theme') || 'dark';
 }
@@ -17,10 +19,14 @@ export default function Policy3D({ onOpenChapter }) {
   const sceneRef = useRef(null);
   const [active, setActive] = useState('place');
   const [spin, setSpin] = useState(false);
+  const [mode, setMode] = useState('free');
+  const [tour, setTour] = useState(false);
+  const modeRef = useRef('free');
   const [webglOk, setWebglOk] = useState(true);
   const [theme, setTheme] = useState(readTheme);
   const activeRef = useRef(active);
   activeRef.current = active;
+  modeRef.current = mode;
 
   // ההמחשה עוקבת אחרי ערכת הנושא של האפליקציה (כהה או בהיר).
   useEffect(() => {
@@ -32,6 +38,7 @@ export default function Policy3D({ onOpenChapter }) {
   useEffect(() => {
     try {
       sceneRef.current = createPolicyScene(mountRef.current);
+      sceneRef.current.setMode(modeRef.current);
       sceneRef.current.setView(activeRef.current);
       setWebglOk(true);
     } catch {
@@ -41,6 +48,15 @@ export default function Policy3D({ onOpenChapter }) {
   }, [theme]);
 
   useEffect(() => { sceneRef.current?.setView(active); }, [active]);
+  useEffect(() => { sceneRef.current?.setMode(mode); }, [mode]);
+
+  // סיור: עובר אוטומטית בין ארבעת המבטים
+  useEffect(() => {
+    if (!tour) return undefined;
+    const order = ['iso', 'front', 'top', 'free'];
+    const id = setInterval(() => setMode(m => order[(order.indexOf(m) + 1) % order.length]), 3500);
+    return () => clearInterval(id);
+  }, [tour]);
   useEffect(() => { sceneRef.current?.setAutoRotate(spin); }, [spin, theme]);
 
   const step = POLICY_STEPS.find(s => s.id === active);
@@ -62,8 +78,14 @@ export default function Policy3D({ onOpenChapter }) {
           <div ref={mountRef} className="p3d-canvas" />
           {!webglOk && <div className="p3d-fallback">הדפדפן אינו תומך בתלת־ממד. הכללים מוצגים בצד.</div>}
           <div className="p3d-tools">
-            <button className={`btn ${spin ? 'primary' : ''}`} onClick={() => setSpin(!spin)}>{spin ? 'עצור סיבוב' : 'סיבוב אוטומטי'}</button>
-            <button className="btn" onClick={() => sceneRef.current?.setView(active)}>איפוס מצלמה</button>
+            <div className="p3d-modes" role="group" aria-label="זווית מבט">
+              {MODES.map(([id, label]) => (
+                <button key={id} className={`btn ${mode === id ? 'primary' : ''}`} aria-pressed={mode === id} onClick={() => { setTour(false); setMode(id); }}>{label}</button>
+              ))}
+            </div>
+            <button className={`btn ${tour ? 'primary' : ''}`} onClick={() => setTour(!tour)}>{tour ? 'עצור סיור' : 'סיור'}</button>
+            <button className={`btn ${spin ? 'primary' : ''}`} onClick={() => setSpin(!spin)}>{spin ? 'עצור סיבוב' : 'סיבוב'}</button>
+            <button className="btn" onClick={() => sceneRef.current?.setView(active)}>איפוס</button>
           </div>
           <div className="p3d-legend">
             <span><i className="g" />מותר או נדרש</span>
