@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
+
+const Policy3D = lazy(() => import('./Policy3D.jsx'));
 
 const DEFAULT_SECTIONS = [
   {
@@ -300,6 +302,7 @@ function HighlightText({ text, search }) {
 }
 
 export default function PolicyViewer() {
+  const [view, setView] = useState('text');
   const [activeChapter, setActiveChapter] = useState('ch1');
   const [search, setSearch] = useState(() => localStorage.getItem(SEARCH_KEY) || '');
   const [edits, setEdits] = useState(loadEdits);
@@ -362,6 +365,11 @@ export default function PolicyViewer() {
     setEditText('');
   };
 
+  const openChapter = (id) => {
+    setView('text');
+    setTimeout(() => scrollToChapter(id), 80);
+  };
+
   let headingCounter = 0;
   let subCounter = 0;
 
@@ -369,7 +377,19 @@ export default function PolicyViewer() {
     <section className="policy-page glass-panel">
         <div className="policy-header">
           <h2>הצבת פודטראק במרחב הציבורי – אשדוד</h2>
+          <div className="policy-view-switch" role="tablist" aria-label="תצוגת המדיניות">
+            <button role="tab" aria-selected={view === 'text'} className={`btn ${view === 'text' ? 'primary' : ''}`} onClick={() => setView('text')}>הטקסט המלא</button>
+            <button role="tab" aria-selected={view === '3d'} className={`btn ${view === '3d' ? 'primary' : ''}`} onClick={() => setView('3d')}>מדריך תלת־ממדי</button>
+          </div>
         </div>
+
+        {view === '3d' && (
+          <Suspense fallback={<p className="policy-3d-loading">טוען את ההמחשה…</p>}>
+            <Policy3D onOpenChapter={openChapter} />
+          </Suspense>
+        )}
+
+        {view === 'text' && <>
 
         <div className="policy-search-wrap">
           <div className="policy-search-bar">
@@ -491,6 +511,7 @@ export default function PolicyViewer() {
             })}
           </div>
         </div>
+        </>}
     </section>
   );
 }
