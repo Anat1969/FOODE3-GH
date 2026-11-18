@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import TopBar from './components/TopBar.jsx';
 import StatsRail from './components/StatsRail.jsx';
 import PositionsTable from './components/PositionsTable.jsx';
@@ -6,6 +6,7 @@ import DetailsPanel from './components/DetailsPanel.jsx';
 import MapPage from './components/MapPage.jsx';
 import ReportsPage from './components/ReportsPage.jsx';
 import SettingsPage from './components/SettingsPage.jsx';
+const PolicyPage = lazy(() => import('./components/PolicyPage.jsx'));
 import usePositions from './hooks/usePositions.js';
 
 export default function App() {
@@ -71,6 +72,7 @@ export default function App() {
           />
         )}
         {page === 'reports' && <ReportsPage positions={positions} />}
+        {page === 'policy' && <Suspense fallback={<div className="loading-screen"><div className="spinner" /></div>}><PolicyPage /></Suspense>}
         {page === 'settings' && <SettingsPage />}
       </main>
     </div>

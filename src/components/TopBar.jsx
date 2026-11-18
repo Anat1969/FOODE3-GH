@@ -3,6 +3,7 @@ export default function TopBar({ page, setPage, lastSaved, editMode, setEditMode
     ['list', 'רשימת עמדות'],
     ['map', 'מפת עמדות'],
     ['reports', 'דוחות'],
+    ['policy', 'מדיניות תלת־ממדית'],
     ['settings', 'הגדרות']
   ];
   return (

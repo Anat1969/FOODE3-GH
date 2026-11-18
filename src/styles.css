@@ -942,3 +942,48 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   .top-line { flex-wrap: wrap; }
   .top-line h1 { order: -1; width: 100%; text-align: center; font-size: 16px; }
 }
+
+/* מדיניות תלת־ממדית */
+.policy-page { padding: 20px 24px; margin: 0 12px 12px; }
+.policy-head h2 { font-size: 22px; font-weight: 700; }
+.policy-head p { color: var(--text-muted); margin: 4px 0 12px; }
+.policy-key-numbers { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; }
+.policy-key-numbers div { background: var(--surface); border-radius: 10px; padding: 4px 10px; text-align: center; }
+.policy-key-numbers b { display: block; font-size: 22px; font-weight: 700; color: #fff; }
+.policy-key-numbers span { font-size: 12px; color: var(--text-muted); }
+.policy-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; }
+.policy-stage { position: relative; border-radius: 12px; overflow: hidden; height: clamp(430px, calc(100vh - 420px), 680px); background: var(--bg); }
+.policy-canvas { position: absolute; inset: 0; }
+.policy-canvas canvas { display: block; width: 100%; height: 100%; }
+.p3d-labels { direction: ltr; position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.p3d-label { direction: rtl; font-size: 13px; line-height: 1.3; padding: 4px 8px; border-radius: 6px; background: rgba(15, 25, 35, 0.88); color: #fff; white-space: nowrap; text-align: center; }
+.p3d-label.good { background: rgba(52, 168, 83, 0.9); }
+.p3d-label.bad { background: rgba(234, 67, 53, 0.92); }
+.p3d-label.warn { background: rgba(251, 188, 4, 0.95); color: #111; }
+.policy-stage-tools { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; z-index: 2; }
+.policy-stage-tools button, .policy-nav button { background: rgba(255,255,255,0.12); color: var(--text); border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; }
+.policy-stage-tools button:hover, .policy-nav button:hover { background: rgba(255,255,255,0.22); }
+.policy-stage-tools button.active { background: var(--blue); color: #fff; }
+.policy-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-muted); }
+.policy-side { display: flex; flex-direction: column; gap: 12px; }
+.policy-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.policy-steps button { background: var(--surface); color: var(--text); border: 0; border-radius: 10px; padding: 10px 6px; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.policy-steps button em { font-style: normal; font-size: 18px; font-weight: 700; color: var(--text-muted); }
+.policy-steps button:hover { background: var(--surface-hover); }
+.policy-steps button.active { background: var(--blue); color: #fff; }
+.policy-steps button.active em { color: #fff; }
+.policy-card { background: var(--surface); border-radius: 12px; padding: 16px; }
+.policy-card h3 { font-size: 18px; font-weight: 700; }
+.policy-card small { color: var(--text-muted); }
+.policy-card ol { margin: 12px 18px 0 0; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5; }
+.policy-card strong { background: linear-gradient(transparent 55%, rgba(251,188,4,0.45) 55%); color: #fff; font-weight: 700; }
+.policy-nav { display: flex; gap: 8px; margin-top: 14px; }
+.policy-nav button { flex: 1; }
+.policy-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-muted); }
+.policy-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-left: 5px; }
+.policy-legend .g { background: var(--green); } .policy-legend .r { background: var(--red); } .policy-legend .a { background: var(--orange); }
+@media (max-width: 900px) {
+  .policy-layout { grid-template-columns: 1fr; }
+  .policy-stage { height: 420px; }
+  .policy-key-numbers { grid-template-columns: repeat(3, 1fr); }
+}
