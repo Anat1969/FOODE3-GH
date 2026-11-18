@@ -1,14 +1,31 @@
 import { useRef, useState } from 'react';
+import { uploadFile } from '../supabase.js';
+import compressImage from '../utils/compressImage.js';
 
 export default function ImageUpload({ value, onChange, alt }) {
   const inputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleFile = (file) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (e) => onChange(e.target.result);
-    reader.readAsDataURL(file);
+  const uploadToStorage = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('ניתן להעלות רק קבצי תמונה');
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const compressed = await compressImage(file);
+      const { publicUrl } = await uploadFile('foode-images', compressed, { ext: 'jpg' });
+      onChange(publicUrl);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err.message || 'שגיאה בהעלאת התמונה');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handlePaste = (e) => {
@@ -16,7 +33,8 @@ export default function ImageUpload({ value, onChange, alt }) {
     if (!items) return;
     for (const item of items) {
       if (item.type.startsWith('image/')) {
-        handleFile(item.getAsFile());
+        const file = item.getAsFile();
+        if (file) uploadToStorage(file);
         e.preventDefault();
         return;
       }
@@ -25,40 +43,64 @@ export default function ImageUpload({ value, onChange, alt }) {
 
   const handleDrop = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) uploadToStorage(file);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
   };
 
   return (
     <div
       className={`image-upload ${dragOver ? 'drag-over' : ''}`}
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-      onDragLeave={() => setDragOver(false)}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onPaste={handlePaste}
       tabIndex={0}
     >
-      {value ? (
+      {uploading ? (
+        <div className="image-dropzone uploading">
+          <div className="spinner" />
+          <p>דוחס ומעלה תמונה...</p>
+        </div>
+      ) : value ? (
         <div className="image-preview">
           <img src={value} alt={alt || 'תמונת פודטראק'} />
           <div className="image-overlay">
-            <button type="button" onClick={() => onChange('')}>✗ הסר</button>
-            <button type="button" onClick={() => inputRef.current?.click()}>החלף</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onChange(''); }}>הסרה</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>החלף</button>
           </div>
         </div>
       ) : (
         <div className="image-dropzone" onClick={() => inputRef.current?.click()}>
-          <span className="upload-icon">📷</span>
-          <p>גררי תמונה, הדביקי (Ctrl+V) או לחצי לבחירה</p>
+          <p>גררי תמונה לכאן, הדביקי (Ctrl+V) או לחצי לבחירה</p>
+          <p className="upload-hint">JPG, PNG, GIF, WebP, HEIC · נדחס אוטומטית</p>
         </div>
       )}
+      {error && <div className="upload-error">{error}</div>}
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
         style={{ display: 'none' }}
-        onChange={(e) => handleFile(e.target.files?.[0])}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) uploadToStorage(file);
+          e.target.value = '';
+        }}
       />
     </div>
   );

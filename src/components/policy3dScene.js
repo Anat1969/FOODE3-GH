@@ -3,17 +3,33 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 // יחידות: מטרים. החזית של המשאית (חלון השירות) פונה אל Z חיובי.
-const C = {
-  bg: 0x0f1923, paving: 0x2a3644, tile: 0x354457, truck: 0xe8eaed, dark: 0x1b2430,
-  accent: 0x4285f4, green: 0x34a853, red: 0xea4335, amber: 0xfbbc04,
-};
+// צבעי הסצנה נלקחים מערכת הנושא של האפליקציה (כהה או בהיר), כך שההמחשה תואמת את המסך.
+let C = {};
+function readPalette() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (name, fb) => new THREE.Color((cs.getPropertyValue(name).trim()) || fb).getHex();
+  const light = document.documentElement.getAttribute('data-theme') === 'light';
+  C = {
+    light,
+    bg: v('--bg', '#101214'),
+    paving: light ? 0xcfd4da : 0x2a3036,
+    tile: light ? 0xaab1b9 : 0x3b434b,
+    ground: light ? 0xb9c9b4 : 0x1d2a22,
+    truck: light ? 0xffffff : 0xdfe3e8,
+    dark: light ? 0x2a3138 : 0x0d0f11,
+    accent: v('--blue', '#8ab8ff'),
+    green: v('--green', '#63d18f'),
+    red: v('--red', '#ff8077'),
+    amber: v('--orange', '#f2b64c'),
+  };
+}
 
 const VIEWS = {
   overview: { pos: [9, 6.5, 11], target: [0, 1.2, 0] },
   place: { pos: [10, 8, 12], target: [0, 0, -1] },
   design: { pos: [7, 4.5, 8], target: [0, 1.6, 0] },
   access: { pos: [4.5, 2.8, 9.5], target: [0.6, 0.9, 1.6] },
-  ops: { pos: [34, 42, 48], target: [0, 0, 0] },
+  ops: { pos: [13, 14, 19], target: [0, 0.5, 0] },
   bans: { pos: [8, 5, 9.5], target: [0, 1.2, 0.8] },
   permit: { pos: [22, 9, 14], target: [13, 1.2, 0] },
 };
@@ -80,7 +96,7 @@ function buildTruck() {
   body.position.y = 1.55;
   g.add(body);
   // תא נהג
-  const cab = box(1.5, 1.5, 2.2, 0x9aa0a6);
+  const cab = box(1.5, 1.5, 2.2, C.light ? 0xb4bbc2 : 0x8b929a);
   cab.position.set(-3.4, 1.3, 0);
   g.add(cab);
   // חלון שירות בחזית
@@ -111,9 +127,10 @@ export function createPolicyScene(container, onReady) {
   const w = () => container.clientWidth;
   const h = () => container.clientHeight;
 
+  readPalette();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(C.bg);
-  scene.fog = new THREE.Fog(C.bg, 60, 140);
+  scene.fog = new THREE.Fog(C.bg, 70, 160);
 
   const camera = new THREE.PerspectiveCamera(45, w() / h(), 0.1, 400);
   camera.position.set(...VIEWS.overview.pos);
@@ -135,13 +152,13 @@ export function createPolicyScene(container, onReady) {
   controls.maxDistance = 90;
   controls.target.set(...VIEWS.overview.target);
 
-  scene.add(new THREE.HemisphereLight(0xdde6ff, 0x1b2430, 1.1));
+  scene.add(new THREE.HemisphereLight(0xffffff, C.light ? 0x9aa4ad : 0x1b2430, C.light ? 1.5 : 1.1));
   const sun = new THREE.DirectionalLight(0xffffff, 1.4);
   sun.position.set(12, 20, 10);
   scene.add(sun);
 
   // קרקע: ריצוף, ומסביב צמחייה
-  const ground = box(160, 0.1, 160, 0x22402c);
+  const ground = box(160, 0.1, 160, C.ground);
   ground.position.y = -0.06;
   scene.add(ground);
   const plaza = box(26, 0.1, 18, C.paving);
@@ -167,10 +184,10 @@ export function createPolicyScene(container, onReady) {
     const x = cross(1.2, C.red); x.position.set(6, 1.1, -7.5); g.add(x);
     g.add(label('<b>אסור</b> על צמחייה או אדמה', 'bad', [6, 2.0, -7.5]));
     g.add(label('<b>ריצוף קיים</b> בלבד', 'good', [-1.5, 0.4, 3.8]));
-    const pass = flatRect(8, 1.6, C.green, 0.4);
-    pass.position.set(0.3, 0.06, 4.2);
-    g.add(pass);
-    g.add(label('מעבר חופשי <b>1.6 מ׳</b>', 'good', [0.3, 0.6, 4.2]));
+    const axis = flatRect(26, 1.6, C.red, 0.3);
+    axis.position.set(6, 0.06, 6.4);
+    g.add(axis);
+    g.add(label('<b>אסור</b> על ציר הליכה ראשי או שער כניסה', 'bad', [10, 0.6, 6.4]));
     [[-1.2, 0xfbbc04, 'מים'], [0, 0x4285f4, 'ביוב'], [1.2, 0xea4335, 'חשמל']].forEach(([px, col, name]) => {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.5, 16), mat(col, { emissive: col, emissiveIntensity: 0.4 }));
       post.position.set(px + 0.3, 0.25, -1.9);
@@ -189,13 +206,14 @@ export function createPolicyScene(container, onReady) {
     const x = cross(0.7, C.red); x.position.set(0.3, 3.3, 0.1); g.add(x);
     g.add(label('<b>אסור</b> שלט על הגג', 'bad', [0.3, 4.0, 0]));
     g.add(label('שילוט <b>בחזית</b> בלבד', 'good', [0.3, 3.15, 1.4]));
-    g.add(label('<b>נייד</b> על גלגלים, ללא עיגון', 'good', [-1.2, 0.2, 2.2]));
+    g.add(label('<b>נייד</b> על גלגלים, ללא יסודות. פינוי תוך 24 שעות', 'good', [-1.2, 0.2, 2.2]));
     g.add(label('מיזוג <b>מוסתר</b> בתוך המבנה', 'good', [-2.2, 2.9, -1.2]));
-    g.add(label('<b>שני גוונים</b> ושני חומרים, צבע אפוי', 'good', [3.4, 2.7, 1.2]));
-    const sticker = ghost(0.5, 0.4, 0.04, C.red, 0.6);
-    sticker.position.set(2.0, 1.5, 1.2);
-    g.add(sticker);
-    g.add(label('<b>בלי מדבקות</b>', 'bad', [2.0, 1.1, 1.4]));
+    g.add(label('חומרים: <b>עץ ומתכת</b> בלבד', 'good', [3.4, 2.7, 1.2]));
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3, 12), new THREE.MeshBasicMaterial({ color: C.red, transparent: true, opacity: 0.55 }));
+    pole.position.set(4.6, 1.5, 1.6);
+    g.add(pole);
+    g.add(label('<b>אין</b> עמודי תאורה חיצוניים', 'bad', [4.6, 3.3, 1.6]));
+    g.add(label('אחסון <b>פנימי</b> בלבד', 'good', [-0.6, 2.9, -1.2]));
   }
 
   // 3. נגישות
@@ -207,7 +225,7 @@ export function createPolicyScene(container, onReady) {
     const zone = ghost(2.8, 0.6, 0.5, C.green, 0.28);
     zone.position.set(0.3, 0.8, 1.4);
     g.add(zone);
-    g.add(label('הצגת מזון <b>50–110 ס״מ</b>', 'good', [-1.6, 0.8, 1.6]));
+    g.add(label('מזון עד <b>110 ס״מ</b>, עד 50 מהדופן', 'good', [-1.8, 0.8, 1.7]));
     const turn = flatRect(1.5, 1.5, C.accent, 0.45);
     turn.position.set(0.3, 0.06, 2.9);
     g.add(turn);
@@ -221,8 +239,8 @@ export function createPolicyScene(container, onReady) {
   // 4. תפעול
   {
     const g = mk('ops');
-    g.add(ring(30, C.green, 0.3));
-    g.add(label('ניקיון ברדיוס <b>30 מ׳</b>', 'good', [30, 1, 0]));
+    g.add(ring(10, C.green, 0.12));
+    g.add(label('ניקיון ברדיוס <b>10 מ׳</b> מקצה השטח', 'good', [10, 1, 0]));
     const gen = box(0.8, 0.6, 0.5, 0x555d66);
     gen.position.set(-2.2, 0.3, -2.6);
     g.add(gen);
@@ -231,12 +249,13 @@ export function createPolicyScene(container, onReady) {
       rg.position.set(-2.2, 0.04, -2.6);
       g.add(rg);
     });
-    g.add(label('גנרטור שקט <b>53–57 dB</b> ב-5 מ׳', 'warn', [-2.2, 1.2, -2.6]));
-    g.add(label('<b>א׳–ה׳ 07:00–23:00</b><br>ערבי שישי וחג 08:00–15:00', '', [0.3, 4.2, 0]));
-    const oil = box(0.3, 0.4, 0.3, 0xfbbc04);
-    oil.position.set(2.4, 0.2, -1.5);
-    g.add(oil);
-    g.add(label('שמן משומש <b>5 ליטר</b>', '', [2.4, 0.8, -1.5]));
+    g.add(label('גנרטור שקט <b>53–57 dB</b> ב-5 מ׳', 'warn', [-4.2, 1.4, 2.2]));
+    g.add(label('<b>אסור</b> רמקול. מוזיקה ותאורה רק מתוך הפודטראק', 'bad', [0.3, 4.2, 0]));
+    g.add(label('שעות לפי <b>חוק העזר</b>', '', [5.2, 2.2, -2.4]));
+    const bin = box(0.5, 0.7, 0.5, C.green);
+    bin.position.set(2.6, 0.35, 1.7);
+    g.add(bin);
+    g.add(label('פסולת <b>בשקיות סגורות</b>', 'good', [2.6, 1.1, 1.7]));
   }
 
   // 5. איסורים
@@ -259,6 +278,10 @@ export function createPolicyScene(container, onReady) {
     ac.position.set(-3.0, 2.3, 1.35);
     g.add(ac);
     g.add(label('<b>מנוע מיזוג</b> תלוי', 'bad', [-3.0, 2.9, 1.35]));
+    const gas = ghost(0.3, 0.9, 0.3, C.red, 0.5);
+    gas.position.set(-1.6, 0.45, -2.6);
+    g.add(gas);
+    g.add(label('<b>גלילי גז</b> ובלוני לחץ', 'bad', [-1.6, 1.3, -2.6]));
     const sprinkler = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.3, 12), mat(C.red, { emissive: C.red }));
     sprinkler.position.set(-4.5, 0.15, 2.5);
     g.add(sprinkler);
@@ -268,7 +291,7 @@ export function createPolicyScene(container, onReady) {
   // 6. רישוי: חמישה שלבים עולים
   {
     const g = mk('permit');
-    const names = ['א׳ הכנה', 'ב׳ הגשה', 'ג׳ בחינה', 'ד׳ החלטה', 'ה׳ הנפקה'];
+    const names = ['א׳ קונספט', 'ב׳ ביקורת', 'ג׳ תיקון', 'ד׳ אישור', 'ה׳ רישיון'];
     names.forEach((n, i) => {
       const last = i === names.length - 1;
       const step = box(2.2, 0.6 * (i + 1), 3, last ? C.green : C.accent, { transparent: true, opacity: 0.92 });
@@ -276,7 +299,7 @@ export function createPolicyScene(container, onReady) {
       g.add(step);
       g.add(label(n, last ? 'good' : '', [8 + i * 2.2, 0.6 * (i + 1) + 0.5, 0]));
     });
-    g.add(label('רישיון <b>עד 31/12</b>, בלי חידוש אוטומטי', 'good', [16.8, 4.4, 0]));
+    g.add(label('רישיון <b>עד סוף השנה</b>. חידוש עד 60 ימים לפני', 'good', [16.8, 4.4, 0]));
   }
 
   Object.values(groups).forEach(g => { g.visible = false; });

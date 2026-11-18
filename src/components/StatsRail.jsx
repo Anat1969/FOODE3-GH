@@ -1,16 +1,27 @@
-export default function StatsRail({ positions }) {
-  const total = positions.length;
-  const approved = positions.filter(p => p.approval === 'מקובלת').length;
-  const pending = positions.filter(p => p.approval === 'בבדיקה').length;
-  const rejected = positions.filter(p => p.approval === 'לא מקובלת').length;
-  const pct = total ? Math.round((approved / total) * 100) : 0;
+export default function StatsRail({ positions, activeFilter, onFilter }) {
+  const count = (fn) => positions.filter(fn).length;
+  const stats = [
+    ['all', 'עמדות', positions.length, ''],
+    ['approved', 'מקובלות', count(p => p.approval === 'מיקום מקובל'), 'green'],
+    ['pending', 'בבדיקה', count(p => p.approval === 'בבדיקה'), 'orange'],
+    ['rejected', 'לא מקובלות', count(p => p.approval === 'מיקום לא מקובל'), 'red'],
+    ['harmonica', 'הרמוניקה ממתינה', count(p => p.harmonicaStatus === 'הוגשה'), 'blue'],
+  ];
+
   return (
-    <section className="stats-rail">
-      <div className="stat orb"><strong>{pct}%</strong><span>מקובלות</span></div>
-      <div className="stat"><strong>{total}</strong><span>עמדות</span></div>
-      <div className="stat green"><strong>{approved}</strong><span>מקובלות</span></div>
-      <div className="stat orange"><strong>{pending}</strong><span>בבדיקה</span></div>
-      <div className="stat red"><strong>{rejected}</strong><span>לא מקובלות</span></div>
-    </section>
+    <nav className="stat-strip" aria-label="סינון לפי סטטוס">
+      {stats.map(([id, label, value, tone]) => (
+        <button
+          key={id}
+          type="button"
+          className={`stat-chip ${tone} ${activeFilter === id ? 'active' : ''}`}
+          aria-pressed={activeFilter === id}
+          onClick={() => onFilter(id)}
+        >
+          <strong>{value}</strong>
+          <span>{label}</span>
+        </button>
+      ))}
+    </nav>
   );
 }

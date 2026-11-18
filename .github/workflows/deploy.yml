@@ -1,24 +1,27 @@
 name: Deploy to GitHub Pages
 
+# GitHub Pages for this repo serves the gh-pages branch ("deploy from a branch").
+# The old actions/deploy-pages route was rejected on every run since June 2026
+# ("Branch main is not allowed to deploy to github-pages"), so Pages kept a July build
+# that still pointed at the deleted FOODE3 Supabase project and never loaded data.
+# This workflow builds main with the Pages base path and pushes the result to gh-pages,
+# keeping the preview/ folder that holds branch previews.
+
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,9 +29,19 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run build
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-      - id: deployment
-        uses: actions/deploy-pages@v4
+        env:
+          BASE_PATH: /FOODE3-GH/
+      - name: Publish dist to gh-pages (keeps preview/)
+        run: |
+          set -e
+          git fetch origin gh-pages
+          git worktree add ../site origin/gh-pages
+          cd ../site
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name preview -exec rm -rf {} +
+          cp -r "$GITHUB_WORKSPACE/dist/." .
+          cp index.html 404.html
+          touch .nojekyll
+          git add -A
+          if git diff --cached --quiet; then echo "nothing to publish"; exit 0; fi
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -m "פרסום ל-GitHub Pages מ-${GITHUB_SHA::7}"
+          git push origin HEAD:gh-pages

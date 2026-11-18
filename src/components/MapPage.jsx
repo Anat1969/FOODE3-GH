@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { statusColor } from '../utils/colors.js';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { approvalTone } from '../utils/colors.js';
+import HoursPanel, { HoursList, useHoursView } from './HoursPanel.jsx';
+import { PERMIT, permitState } from '../utils/hours.js';
+import { isPinned } from './PositionCard.jsx';
 import maplibregl from 'maplibre-gl';
 
 const ASHDOD_CENTER = [34.6415, 31.8014];
-const STATUS_COLORS = { green: '#34a853', orange: '#fbbc04', red: '#ea4335' };
-
-function isPinned(mapPin) {
-  if (!mapPin) return false;
-  return Math.abs(mapPin.x - ASHDOD_CENTER[0]) > 0.0001 || Math.abs(mapPin.y - ASHDOD_CENTER[1]) > 0.0001;
-}
+const STATUS_COLORS = { green: '#3fb46a', orange: '#e9b23c', red: '#e5534b', gray: '#9aa0a6' };
 
 function createMarkerEl(name, color, isSelected, pinned) {
   const wrapper = document.createElement('div');
@@ -40,7 +38,22 @@ function createMarkerEl(name, color, isSelected, pinned) {
   return wrapper;
 }
 
-export default function MapPage({ positions, update, selectedId, setSelectedId, pinningId, setPinningId }) {
+function readView() {
+  const q = new URLSearchParams(window.location.search);
+  return q.get('view') === 'hours' ? 'hours' : 'approval';
+}
+
+export default function MapPage({ positions, update, selectedId, openCard, pinningId, setPinningId, onPinned, focusId, canEdit }) {
+  const [view, setViewState] = useState(readView);
+  const hours = useHoursView(positions);
+  const setView = (v) => {
+    setViewState(v);
+    const url = new URL(window.location.href);
+    if (v === 'hours') url.searchParams.set('view', 'hours'); else { url.searchParams.delete('view'); url.searchParams.delete('h'); }
+    window.history.replaceState(null, '', url.pathname + url.search);
+  };
+  const hoursMode = view === 'hours' && !pinningId;
+  const permitById = useMemo(() => Object.fromEntries(positions.map(p => [p.id, permitState(p)])), [positions]);
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef({});
@@ -78,7 +91,6 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     return () => map.remove();
   }, []);
 
-  // Pinning: use map's native click + disable marker pointer-events
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -97,13 +109,14 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     });
 
     const clickHandler = (e) => {
-      update(pinningRef.current, { mapPin: { x: e.lngLat.lng, y: e.lngLat.lat } });
+      const id = pinningRef.current;
+      update(id, { mapPin: { x: e.lngLat.lng, y: e.lngLat.lat } });
       setPinningId(null);
       setCursorCoord(null);
+      onPinned?.(id);
     };
 
     const moveHandler = (e) => {
-      const rect = map.getCanvas().getBoundingClientRect();
       setCursorCoord({
         lng: e.lngLat.lng.toFixed(5),
         lat: e.lngLat.lat.toFixed(5),
@@ -120,9 +133,8 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       map.off('mousemove', moveHandler);
       map.getCanvas().style.cursor = '';
     };
-  }, [pinningId, update, setPinningId]);
+  }, [pinningId, update, setPinningId, onPinned]);
 
-  // Markers
   useEffect(() => {
     if (!mapRef.current || !mapReady) return;
     const current = new Set(positions.map(p => p.id));
@@ -137,7 +149,9 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
     positions.forEach(p => {
       const lng = p.mapPin?.x ?? ASHDOD_CENTER[0];
       const lat = p.mapPin?.y ?? ASHDOD_CENTER[1];
-      const color = STATUS_COLORS[statusColor(p.approval)] || STATUS_COLORS.orange;
+      const color = hoursMode
+        ? PERMIT[permitById[p.id]?.tone || 'unknown'].color
+        : STATUS_COLORS[approvalTone(p.approval)] || STATUS_COLORS.gray;
       const isSelected = selectedId === p.id;
       const pinned = isPinned(p.mapPin);
 
@@ -151,8 +165,7 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
       }
 
       const el = createMarkerEl(p.positionName, color, isSelected, pinned);
-      const clickTarget = el.querySelector('.map-marker-pin') || el.querySelector('.map-marker-dot');
-      clickTarget.addEventListener('click', (ev) => { ev.stopPropagation(); setSelectedId(p.id); });
+      el.addEventListener('click', (ev) => { ev.stopPropagation(); openCard(p.id); });
 
       if (pinningRef.current) {
         el.style.pointerEvents = 'none';
@@ -163,19 +176,42 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
         .addTo(mapRef.current);
       markersRef.current[p.id] = { marker, key };
     });
-  }, [positions, selectedId, mapReady, setSelectedId]);
+  }, [positions, selectedId, mapReady, openCard, hoursMode, permitById]);
 
-  const selected = positions.find(p => p.id === selectedId);
+  // Moving the hour keeps every marker in place and only changes its state, so the change reads as the same stand opening or closing.
+  useEffect(() => {
+    Object.entries(markersRef.current).forEach(([id, { marker }]) => {
+      const el = marker.getElement();
+      const open = hoursMode ? hours.openById[id] : undefined;
+      el.classList.toggle('hours-open', open === true);
+      el.classList.toggle('hours-closed', open === false);
+      el.classList.toggle('hours-unknown', hoursMode && open == null);
+    });
+  }, [hoursMode, hours.openById, positions, mapReady, selectedId]);
+
+  // Fly to a position when asked from its card.
+  useEffect(() => {
+    if (!mapReady || !focusId) return;
+    const p = positions.find(x => x.id === focusId);
+    if (p && isPinned(p.mapPin)) mapRef.current.flyTo({ center: [p.mapPin.x, p.mapPin.y], zoom: 17, duration: 900 });
+  }, [focusId, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const pinningName = pinningId ? positions.find(p => p.id === pinningId)?.positionName : null;
 
   return (
-    <section className="map-page glass-panel">
+    <section className={`map-page panel${hoursMode ? ' map-page-hours' : ''}`}>
+      {!pinningId && (
+        <div className="map-view-switch segmented large" role="group" aria-label="מה המפה מראה">
+          <button className={view === 'approval' ? 'on' : ''} aria-pressed={view === 'approval'} onClick={() => setView('approval')}>אישור מיקום</button>
+          <button className={view === 'hours' ? 'on' : ''} aria-pressed={view === 'hours'} onClick={() => setView('hours')}>מפה לפי שעה</button>
+        </div>
+      )}
+      {hoursMode && <HoursPanel positions={positions} hours={hours} permitById={permitById} openCard={openCard} />}
       <div className="map-header">
-        <h2>מפת עמדות – אשדוד</h2>
         {pinningId && (
           <div className="pinning-banner">
-            מסמנים את <strong>{pinningName}</strong> – לחצי על המפה למיקום הפודטראק
-            <button className="ghost pinning-cancel" onClick={() => { setPinningId(null); setCursorCoord(null); }}>ביטול</button>
+            מסמנים את <strong>{pinningName}</strong>. לחיצה על המפה קובעת את מיקום הפודטראק.
+            <button className="btn small" onClick={() => { const id = pinningId; setPinningId(null); setCursorCoord(null); onPinned?.(id); }}>ביטול</button>
           </div>
         )}
       </div>
@@ -192,28 +228,26 @@ export default function MapPage({ positions, update, selectedId, setSelectedId, 
             </div>
           )}
         </div>
-        {selected && !pinningId && (
-          <div className="map-info-card glass-panel">
-            <h3>{selected.positionName}</h3>
-            <p>{selected.complexName} · {selected.businessName}</p>
-            <div className="map-info-row">
-              <span className={`check-mark-small ${selected.water === 'טוב' ? 'good' : 'bad'}`}>{selected.water === 'טוב' ? '✓' : '✗'} מים</span>
-              <span className={`check-mark-small ${selected.electricity === 'טוב' ? 'good' : 'bad'}`}>{selected.electricity === 'טוב' ? '✓' : '✗'} חשמל</span>
-              <span className={`check-mark-small ${selected.sewage === 'טוב' ? 'good' : 'bad'}`}>{selected.sewage === 'טוב' ? '✓' : '✗'} ביוב</span>
-            </div>
-            <div className="map-info-status">
-              <span className={`chip ${statusColor(selected.approval)}`}>{selected.approval}</span>
-            </div>
-            {isPinned(selected.mapPin) && <p className="map-info-coords">📌 {selected.mapPin.x.toFixed(5)}, {selected.mapPin.y.toFixed(5)}</p>}
-            <button className="primary map-pin-btn" onClick={() => setPinningId(selected.id)}>📍 סמן מיקום על המפה</button>
-          </div>
-        )}
       </div>
-      <div className="map-legend">
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מקובלת</span>
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
-        <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> לא מקובלת</span>
-      </div>
+      {hoursMode ? (
+        <div className="map-legend hours-legend" aria-label="מקרא">
+          <span className="mono-label">צבע: תוקף הרישיון</span>
+          {['expired', 'soon', 'valid', 'unknown'].map(t => (
+            <span key={t}><span className="legend-dot" style={{ background: PERMIT[t].color }} /> {PERMIT[t].label}</span>
+          ))}
+          <span className="mono-label">סמן: שעות</span>
+          <span><span className="legend-mark open" /> פתוחה</span>
+          <span><span className="legend-mark closed" /> סגורה</span>
+          <span><span className="legend-mark unknown" /> אין שעות רשומות</span>
+        </div>
+      ) : (
+        <div className="map-legend">
+          <span><span className="legend-dot" style={{ background: STATUS_COLORS.green }} /> מיקום מקובל</span>
+          <span><span className="legend-dot" style={{ background: STATUS_COLORS.orange }} /> בבדיקה</span>
+          <span><span className="legend-dot" style={{ background: STATUS_COLORS.red }} /> מיקום לא מקובל</span>
+        </div>
+      )}
+      {hoursMode && <HoursList positions={positions} hours={hours} permitById={permitById} openCard={openCard} />}
     </section>
   );
 }
