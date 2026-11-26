@@ -1,4 +1,4 @@
-import{r as ge,j as Ot}from"./index-CDyLIZlT.js";/**
+import{r as ge,j as Ot}from"./index-DHuCLkmm.js";/**
  * @license
  * Copyright 2010-2024 Three.js Authors
  * SPDX-License-Identifier: MIT
