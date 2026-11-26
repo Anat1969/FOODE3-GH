@@ -1190,3 +1190,34 @@ tr.group-head.complex .group-name { color: hsl(var(--cx-h) 60% 62%); }
   .app-shell.card-docked .main-area.page-list { padding-inline-start: calc(33.333vw); transition: padding .25s ease; }
   .app-shell.card-docked .position-card .card-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Topic tints in the positions table */
+.tint-infra { background-color: color-mix(in srgb, var(--blue) 3.5%, transparent); }
+.tint-quality { background-color: color-mix(in srgb, var(--orange) 3%, transparent); }
+th.tint-infra, .col-group-header.tint-infra { background-color: color-mix(in srgb, var(--blue) 12%, transparent); }
+th.tint-quality, .col-group-header.tint-quality { background-color: color-mix(in srgb, var(--orange) 11%, transparent); }
+
+/* Home: the map at the center, attention and complexes beside it */
+.home-main { display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.home-map { min-height: 0; }
+.home-side { display: grid; gap: 16px; align-content: start; }
+.map-page.map-embedded { height: 64vh; min-height: 380px; }
+@media (max-width: 900px) {
+  .home-main { grid-template-columns: minmax(0, 1fr); }
+  .map-page.map-embedded { height: 52vh; min-height: 300px; }
+}
+
+/* Linked agreements in the position card */
+.card-trucks { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+.card-trucks button { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--surface-hover); color: var(--text); font: 14px var(--font); text-align: start; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+.card-trucks button:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.18); }
+.card-truck-biz { color: var(--text-muted); }
+[data-theme="light"] .card-trucks button { background: #f3f5f7; }
+
+/* Slice window */
+.slice { position: relative; }
+.slice-panel { position: absolute; top: calc(100% + 6px); inset-inline-start: 0; z-index: 60; width: min(440px, calc(100vw - 32px)); padding: 12px; display: grid; gap: 8px; border-radius: 12px; background: var(--bg-elevated, #1c1f23); box-shadow: 0 18px 40px -12px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.25); }
+.slice-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+.slice-foot { display: flex; align-items: center; gap: 12px; }
+[data-theme="light"] .slice-panel { background: #ffffff; box-shadow: 0 18px 40px -14px rgba(20,30,40,0.35), 0 2px 8px rgba(20,30,40,0.10); }
+@media (max-width: 640px) { .slice-panel { position: fixed; inset-inline: 12px; top: auto; width: auto; } }

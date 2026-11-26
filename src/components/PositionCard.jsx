@@ -220,7 +220,7 @@ function DocList({ docs, canEdit, onRemove, onRename, numbered }) {
 export default function PositionCard({
   position, editor, docs, events, tab, setTab, onClose,
   update, changeApproval, remove, saveDoc, removeDoc, saveEvent, removeEvent,
-  onPin, onShowOnMap, notify, cardLink,
+  onPin, onShowOnMap, notify, cardLink, trucks = [], openTrucks,
 }) {
   const [uploading, setUploading] = useState(null);
   const [newCorrection, setNewCorrection] = useState('');
@@ -403,6 +403,29 @@ export default function PositionCard({
               </div>
 
               <Field label="הערות" wide><EditText canEdit={canEdit} value={p.notes} onChange={set('notes')} multiline placeholder="הערות כלליות לעמדה" /></Field>
+
+              <h3 className="card-subtitle">הסכמים</h3>
+              {trucks.length === 0 ? (
+                <p className="card-value empty">אין הסכם מקושר</p>
+              ) : (
+                <ul className="card-trucks">
+                  {trucks.map(t => {
+                    const left = t.end_date ? Math.round((new Date(t.end_date) - new Date()) / 86400000) : null;
+                    const tone = left === null ? 'gray' : left < 0 ? 'red' : left <= 180 ? 'orange' : 'green';
+                    const d = (x) => (x ? x.split('-').reverse().join('.') : '—');
+                    return (
+                      <li key={t.id}>
+                        <button type="button" onClick={() => openTrucks?.(t.owner_name)} title="פתיחה בדף הפודטראקים">
+                          <strong>{t.owner_name || `הסכם ${t.number}`}</strong>
+                          {t.business_label && <span className="card-truck-biz">{t.business_label}</span>}
+                          <span className={`pill ${tone}`}>{left !== null && left < 0 ? 'הסתיים' : 'עד'} {d(t.end_date)}</span>
+                          {t.option_until && <span className="mono-label">אופציה עד {d(t.option_until)}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
 
               <h3 className="card-subtitle">מיקום</h3>
               <div className="card-location">

@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, Fragment, cloneElement } from 'react';
 import {
   APPROVAL_OPTIONS, BUILDING_OPTIONS, ENV_OPTIONS,
   approvalTone, qualityTone, harmonicaTone, withCurrent,
@@ -84,6 +84,8 @@ const COLUMNS = [
   { key: 'harmonicaStatus', label: 'הרמוניקה', group: 'סטטוס', groupBy: true, filter: 'select' },
   { key: 'notes', label: 'הערות', group: 'סטטוס', filter: 'text' },
 ];
+// Topic tints: infrastructure and quality columns carry a quiet background, top to bottom.
+const TINT = { 'תשתיות': 'tint-infra', 'איכות': 'tint-quality' };
 const BY_KEY = Object.fromEntries(COLUMNS.map(c => [c.key, c]));
 const DEFAULT_ORDER = COLUMNS.map(c => c.key);
 const ORDER_KEY = 'foode3-col-order';
@@ -280,7 +282,7 @@ export default function PositionsTable({
           <thead>
             <tr className="col-group-row">
               {colGroups.map((g, i) => (
-                <th key={`${g.name}-${i}`} colSpan={g.span} className={`col-group-header ${g.bandStart ? 'band-start' : ''}`}>
+                <th key={`${g.name}-${i}`} colSpan={g.span} className={`col-group-header ${g.bandStart ? 'band-start' : ''} ${TINT[g.name] || ''}`}>
                   {g.name}
                   {g.infra && <span className="mark-legend"><b className="good">✓</b> תקין <b className="bad">✗</b> חסר</span>}
                 </th>
@@ -293,7 +295,7 @@ export default function PositionsTable({
                 return (
                   <th
                     key={col.key}
-                    className={`${col.bandStart ? 'band-start' : ''} ${isSorted ? 'sorted' : ''} ${dragKey === col.key ? 'dragging' : ''} ${dropKey === col.key && dragKey !== col.key ? 'drop-target' : ''}`}
+                    className={`${col.bandStart ? 'band-start' : ''} ${TINT[col.group] || ''} ${isSorted ? 'sorted' : ''} ${dragKey === col.key ? 'dragging' : ''} ${dropKey === col.key && dragKey !== col.key ? 'drop-target' : ''}`}
                     aria-sort={isSorted ? (sortAsc ? 'ascending' : 'descending') : undefined}
                     title="גרירה מזיזה את העמודה"
                     {...dragProps(col)}
@@ -310,7 +312,7 @@ export default function PositionsTable({
             </tr>
             <tr className="filter-row">
               {cols.map(col => (
-                <th key={col.key} className={col.bandStart ? 'band-start' : ''}>
+                <th key={col.key} className={`${col.bandStart ? 'band-start' : ''} ${TINT[col.group] || ''}`}>
                   {col.filter === 'select' && (
                     <select className="filter-input" value={filters[col.key] || ''} aria-label={`סינון לפי ${col.label}`} onChange={e => setFilters(f => ({ ...f, [col.key]: e.target.value }))}>
                       <option value="">הכול</option>
@@ -348,7 +350,10 @@ export default function PositionsTable({
                       tabIndex={0}
                       onKeyDown={e => { if (e.key === 'Enter' && e.target === e.currentTarget) openCard(row.id); }}
                     >
-                      {cols.map(c => cell(c, row))}
+                      {cols.map(c => {
+                        const el = cell(c, row);
+                        return TINT[c.group] ? cloneElement(el, { className: `${el.props.className || ''} ${TINT[c.group]}` }) : el;
+                      })}
                     </tr>
                   ))}
                 </tbody>

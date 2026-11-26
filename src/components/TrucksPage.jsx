@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
+import SliceWindow, { applyConditions } from './SliceWindow.jsx';
 
 // Food truck agreements (from the municipal Excel), kept in foode_trucks and written only through foode_write.
 const TYPES = ['פרטי', 'חברה לתיירות'];
@@ -14,6 +15,7 @@ function endTone(d) {
 }
 
 const stop = e => e.stopPropagation();
+const END_LABEL = { red: 'הסתיים', orange: 'מסתיים בחצי שנה', green: 'בתוקף', gray: 'אין תאריך' };
 
 function Cell({ value, onChange, canEdit, type = 'text', strong, ltr }) {
   if (!canEdit) {
@@ -51,8 +53,17 @@ function Timeline({ row, domain }) {
   );
 }
 
+const HEADERS = [
+  ['number', 'מס׳'], ['owner_name', 'בעל הפודטראק ועסק'], ['location', 'מיקום'], ['_position', 'עמדה'], ['owner_type', 'סוג'],
+  [null, 'טלפון'], ['start_date', 'הפעלה'], ['end_date', 'סיום'], ['option_until', 'אופציה עד'], [null, 'ציר זמן'], ['status', 'סטטוס'],
+];
+
 export default function TrucksPage({ trucks, save, remove, positions, canEdit, openCard, initialTerm = '' }) {
   const [term, setTerm] = useState(initialTerm);
+  const [sortCol, setSortCol] = useState('number');
+  const [sortAsc, setSortAsc] = useState(true);
+  const [conditions, setConditions] = useState([]);
+  const sortBy = (key) => { if (key === sortCol) setSortAsc(a => !a); else { setSortCol(key); setSortAsc(true); } };
   // Typing shows at once and is written 450ms after the last keystroke, so answers cannot arrive out of order.
   const [drafts, setDrafts] = useState({});
   const timers = useRef({});
@@ -75,10 +86,25 @@ export default function TrucksPage({ trucks, save, remove, positions, canEdit, o
   }, [trucks, drafts]);
   const posById = useMemo(() => Object.fromEntries(positions.map(p => [p.id, p])), [positions]);
 
+  const sliceColumns = useMemo(() => [
+    { key: 'location', label: 'מיקום', kind: 'select' },
+    { key: 'owner_type', label: 'סוג', kind: 'select' },
+    { key: '_end', label: 'מצב ההסכם', kind: 'select', value: r => END_LABEL[endTone(r.end_date)] },
+    { key: '_linked', label: 'קישור לעמדה', kind: 'select', value: r => (r.position_id && posById[r.position_id] ? 'מקושר' : 'לא מקושר') },
+    { key: 'status', label: 'סטטוס', kind: 'select' },
+    { key: 'owner_name', label: 'בעל הפודטראק', kind: 'text' },
+  ], [posById]);
+
   const t = term.trim().toLowerCase();
-  const shown = !t ? rows : rows.filter(r =>
+  const searched = !t ? rows : rows.filter(r =>
     [r.number, r.owner_name, r.business_label, r.location, r.owner_type, r.phone, r.status, posById[r.position_id]?.positionName]
       .some(v => String(v || '').toLowerCase().includes(t)));
+  const sortValue = (r) => (sortCol === '_position' ? posById[r.position_id]?.positionName || '' : r[sortCol] ?? '');
+  const shown = applyConditions(searched, conditions, sliceColumns).sort((a, b) => {
+    const x = sortValue(a); const y = sortValue(b);
+    const cmp = sortCol === 'number' ? Number(x) - Number(y) : (!x && y ? 1 : x && !y ? -1 : String(x).localeCompare(String(y), 'he'));
+    return (sortAsc ? cmp : -cmp) || Number(a.number) - Number(b.number);
+  });
 
   const domain = useMemo(() => {
     const dates = rows.flatMap(r => [r.start_date, r.end_date, r.option_until]).filter(Boolean).map(d => +new Date(d));
@@ -104,9 +130,10 @@ export default function TrucksPage({ trucks, save, remove, positions, canEdit, o
           <p className={`mode-tag ${canEdit ? 'edit' : 'view'}`}>{canEdit ? 'עריכה: כל שדה נשמר מעצמו' : 'תצוגה בלבד: עריכה דרך קישור העריכה'}</p>
         </div>
         <div className="actions">
+          <SliceWindow columns={sliceColumns} rows={rows} conditions={conditions} setConditions={setConditions} />
           <div className="search-box">
             <input type="search" className="table-search-input" placeholder="חיפוש בכל השדות" aria-label="חיפוש בהסכמים" value={term} onChange={e => setTerm(e.target.value)} />
-            {t && <span className="table-search-count">{shown.length} תוצאות</span>}
+            {shown.length !== rows.length && <span className="table-search-count">{shown.length} תוצאות</span>}
           </div>
           {canEdit && (
             <button
@@ -131,7 +158,17 @@ export default function TrucksPage({ trucks, save, remove, positions, canEdit, o
         <table className="trucks-table">
           <thead>
             <tr>
-              {['מס׳', 'בעל הפודטראק ועסק', 'מיקום', 'עמדה', 'סוג', 'טלפון', 'הפעלה', 'סיום', 'אופציה עד', 'ציר זמן', 'סטטוס'].map(h => <th key={h}>{h}</th>)}
+              {HEADERS.map(([key, h]) => {
+                if (!key) return <th key={h}>{h}</th>;
+                const on = sortCol === key;
+                return (
+                  <th key={h} className={on ? 'sorted' : ''} aria-sort={on ? (sortAsc ? 'ascending' : 'descending') : undefined}>
+                    <button type="button" className="sort-button" onClick={() => sortBy(key)} title="מיון לפי עמודה זו">
+                      {h}<span className="sort-arrow" aria-hidden="true">{on ? (sortAsc ? '↑' : '↓') : '↕'}</span>
+                    </button>
+                  </th>
+                );
+              })}
               {canEdit && <th aria-label="הסרה" />}
             </tr>
           </thead>

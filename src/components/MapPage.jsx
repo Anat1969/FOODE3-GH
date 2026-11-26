@@ -43,7 +43,7 @@ function readView() {
   return q.get('view') === 'hours' ? 'hours' : 'approval';
 }
 
-export default function MapPage({ positions, update, selectedId, openCard, pinningId, setPinningId, onPinned, focusId, canEdit }) {
+export default function MapPage({ positions, update, selectedId, openCard, pinningId, setPinningId, onPinned, focusId, canEdit, embedded = false }) {
   const [view, setViewState] = useState(readView);
   const hours = useHoursView(positions);
   const setView = (v) => {
@@ -52,7 +52,7 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
     if (v === 'hours') url.searchParams.set('view', 'hours'); else { url.searchParams.delete('view'); url.searchParams.delete('h'); }
     window.history.replaceState(null, '', url.pathname + url.search);
   };
-  const hoursMode = view === 'hours' && !pinningId;
+  const hoursMode = view === 'hours' && !pinningId && !embedded;
   const permitById = useMemo(() => Object.fromEntries(positions.map(p => [p.id, permitState(p)])), [positions]);
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -196,11 +196,22 @@ export default function MapPage({ positions, update, selectedId, openCard, pinni
     if (p && isPinned(p.mapPin)) mapRef.current.flyTo({ center: [p.mapPin.x, p.mapPin.y], zoom: 17, duration: 900 });
   }, [focusId, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // On the home page the map frames every pinned position once, whatever the screen size.
+  const framed = useRef(false);
+  useEffect(() => {
+    if (!embedded || !mapReady || framed.current || !mapRef.current) return;
+    const pts = positions.filter(p => isPinned(p.mapPin)).map(p => [p.mapPin.x, p.mapPin.y]);
+    if (!pts.length) return;
+    const bounds = pts.reduce((b, pt) => b.extend(pt), new maplibregl.LngLatBounds(pts[0], pts[0]));
+    mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 16, duration: 0 });
+    framed.current = true;
+  }, [embedded, mapReady, positions]);
+
   const pinningName = pinningId ? positions.find(p => p.id === pinningId)?.positionName : null;
 
   return (
-    <section className={`map-page panel${hoursMode ? ' map-page-hours' : ''}`}>
-      {!pinningId && (
+    <section className={`map-page panel${hoursMode ? ' map-page-hours' : ''}${embedded ? ' map-embedded' : ''}`}>
+      {!pinningId && !embedded && (
         <div className="map-view-switch segmented large" role="group" aria-label="מה המפה מראה">
           <button className={view === 'approval' ? 'on' : ''} aria-pressed={view === 'approval'} onClick={() => setView('approval')}>אישור מיקום</button>
           <button className={view === 'hours' ? 'on' : ''} aria-pressed={view === 'hours'} onClick={() => setView('hours')}>מפה לפי שעה</button>

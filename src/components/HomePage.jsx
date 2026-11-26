@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { approvalTone, harmonicaTone } from '../utils/colors.js';
+import MapPage from './MapPage.jsx';
 
 
 const rise = (i) => ({
@@ -8,7 +9,7 @@ const rise = (i) => ({
   transition: { delay: 0.05 * i, duration: 0.45, ease: [0.2, 0.7, 0.2, 1] },
 });
 
-export default function HomePage({ positions, events, go, openCard, filterTo }) {
+export default function HomePage({ positions, events, go, openCard, filterTo, trucks = [] }) {
   const total = positions.length;
   const count = (fn) => positions.filter(fn).length;
   const approved = count(p => p.approval === 'מיקום מקובל');
@@ -43,7 +44,7 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
       <section className="home-hero">
         <motion.span className="mono-label" {...rise(0)}>עיריית אשדוד · מזון נייד</motion.span>
         <motion.h1 {...rise(1)}>עמדות הפודטראק של אשדוד</motion.h1>
-        <motion.p {...rise(2)}>{total} עמדות · {complexes.length} מתחמים</motion.p>
+        <motion.p {...rise(2)}>{total} עמדות · {complexes.length} מתחמים{trucks.length ? ` · ${trucks.length} הסכמים` : ''}</motion.p>
       </section>
 
       <section className="home-stats">
@@ -62,7 +63,11 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
         ))}
       </section>
 
-      <div className="home-columns">
+      <div className="home-main">
+        <motion.div className="home-map" {...rise(9)}>
+          <MapPage positions={positions} openCard={openCard} pinningId={null} setPinningId={() => {}} update={() => {}} canEdit={false} embedded />
+        </motion.div>
+        <div className="home-side">
         <section className="panel home-block">
           <h2>דורש טיפול</h2>
           {needsAttention.length === 0 ? <p className="card-empty">אין</p> : (
@@ -99,6 +104,7 @@ export default function HomePage({ positions, events, go, openCard, filterTo }) 
             ))}
           </ul>
         </section>
+        </div>
       </div>
 
     </div>
