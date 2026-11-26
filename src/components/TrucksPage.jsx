@@ -51,8 +51,8 @@ function Timeline({ row, domain }) {
   );
 }
 
-export default function TrucksPage({ trucks, save, remove, positions, canEdit, openCard }) {
-  const [term, setTerm] = useState('');
+export default function TrucksPage({ trucks, save, remove, positions, canEdit, openCard, initialTerm = '' }) {
+  const [term, setTerm] = useState(initialTerm);
   // Typing shows at once and is written 450ms after the last keystroke, so answers cannot arrive out of order.
   const [drafts, setDrafts] = useState({});
   const timers = useRef({});

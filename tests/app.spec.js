@@ -158,7 +158,7 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
 test('row, image and location open the card; card is linkable', async ({ page }) => {
   await mockSupabase(page);
   await page.goto('/?p=list');
-  const row = page.locator('tbody tr').first();
+  const row = page.locator('tbody tr[tabindex]').first();
   await row.locator('td').nth(2).click();
   await expect(page.locator('.position-card')).toBeVisible();
   await expect(page).toHaveURL(/pos=00000000-0000-4000-8000-000000000001/);
@@ -171,7 +171,7 @@ test('row, image and location open the card; card is linkable', async ({ page })
 
   await row.locator('.thumb').click();
   await expect(page.locator('.position-card')).toBeVisible();
-  await page.locator('.card-scrim').click({ position: { x: 5, y: 300 } });
+  await page.locator('.card-head-actions').getByRole('button', { name: 'סגירה' }).click();
   await row.locator('td').nth(2).click();
   await expect(page.locator('.position-card')).toBeVisible();
 
@@ -280,9 +280,13 @@ test('table edit mode, legacy values stay visible and readable', async ({ page }
   await page.goto('/?p=list');
   await expect(page.locator('.table-search-input')).toBeVisible();
   await page.locator('.table-search-input').fill('לכיש');
-  await expect(page.locator('tbody tr:not(.group-head)')).toHaveCount(2);
+  await expect(page.locator('tbody tr[tabindex]')).toHaveCount(2);
   await page.locator('.table-search-input').fill('');
-  const select = page.locator('tbody tr').nth(2).locator('select.pill-select').last();
+  // Rows are framed by complex by default; turning it off shows one flat list
+  await expect(page.locator('tr.group-head.complex')).toHaveCount(2);
+  await page.getByRole('button', { name: 'קיבוץ לפי מתחם' }).click();
+  await expect(page.locator('tbody.row-group')).toHaveCount(0);
+  const select = page.locator('tbody tr[tabindex]').nth(2).locator('select.pill-select').last();
   await expect(select).toHaveValue('מקובלת');
   await select.selectOption('מיקום מקובל');
   await expect.poll(() => writes.find(w => w.p_data.approval === 'מיקום מקובל')).toBeTruthy();
@@ -309,15 +313,17 @@ test('table edit mode, legacy values stay visible and readable', async ({ page }
   await expect(page.locator('tr.group-head').first()).toContainText('נחל לכיש');
   await page.locator('.sort-button', { hasText: 'מספר' }).click();
   await expect(page.locator('tbody.row-group')).toHaveCount(0);
-  await page.locator('tbody tr').first().locator('.pill.button.toggle').first().click();
-  await expect.poll(() => writes.find(w => w.p_data.water)).toBeTruthy();
+  // Infrastructure is a check or a cross, and a click flips it
+  await expect(page.locator('tbody tr[tabindex]').nth(1).locator('.mark.bad')).toHaveCount(1);
+  await page.locator('tbody tr[tabindex]').first().locator('.mark.editable').first().click();
+  await expect.poll(() => writes.find(w => w.p_data.water === 'לא טוב')).toBeTruthy();
 
   // Text fields edit in place in the table without opening the card
-  const nameCell = page.locator('tbody tr').first().locator('.cell-input.strong');
+  const nameCell = page.locator('tbody tr[tabindex]').first().locator('.cell-input.strong');
   await nameCell.fill('שם מהטבלה');
   await expect(page.locator('.position-card')).toHaveCount(0);
   await expect.poll(() => writes.find(w => w.p_data.position_name === 'שם מהטבלה')).toBeTruthy();
-  await page.locator('tbody tr').first().locator('.cell-input.notes-text').fill('הערה מהטבלה');
+  await page.locator('tbody tr[tabindex]').first().locator('.cell-input.notes-text').fill('הערה מהטבלה');
   await expect.poll(() => writes.find(w => w.p_data.notes === 'הערה מהטבלה')).toBeTruthy();
   for (const theme of ['dark', 'light']) {
     await page.evaluate(t => document.documentElement.setAttribute('data-theme', t), theme);
@@ -486,4 +492,60 @@ test('agreements page on mobile has no horizontal page scroll', async ({ page })
   await page.goto('/?p=trucks');
   await expect(page.locator('.trucks-table')).toBeVisible();
   await noHorizontalScroll(page);
+});
+
+test('table: column filters, column drag that is remembered, and a global search', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/?p=list');
+  await page.getByLabel('סינון לפי סטטוס מיקום').selectOption('בבדיקה');
+  await expect(page.locator('tbody tr[tabindex]')).toHaveCount(1);
+  await page.getByLabel('סינון לפי מים').selectOption('לא טוב');
+  await expect(page.locator('.empty-row')).toBeVisible();
+  await page.getByRole('button', { name: /ניקוי סינון/ }).click();
+  await page.getByLabel('סינון לפי מים').selectOption('לא טוב');
+  await expect(page.locator('tbody tr[tabindex]')).toHaveCount(1);
+  await page.getByRole('button', { name: /ניקוי סינון/ }).click();
+  await expect(page.locator('tbody tr[tabindex]')).toHaveCount(4);
+  await page.getByLabel('סינון לפי שם עמדה').fill('בדיקה 3');
+  await expect(page.locator('tbody tr[tabindex]')).toHaveCount(1);
+  await page.getByLabel('סינון לפי שם עמדה').fill('');
+
+  // Drag "הערות" onto "מספר": it moves, survives a reload, and can be reset
+  // The table scrolls sideways, so the drag events are sent straight to the two headers
+  await page.evaluate(() => {
+    const ths = [...document.querySelectorAll('thead tr:nth-child(2) th')];
+    const src = ths.find(t => t.textContent.includes('הערות'));
+    const dst = ths.find(t => t.textContent.includes('מספר'));
+    const dataTransfer = new DataTransfer();
+    const fire = (el, type) => el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer }));
+    fire(src, 'dragstart'); fire(dst, 'dragover'); fire(dst, 'drop'); fire(src, 'dragend');
+  });
+  await expect(page.locator('thead tr').nth(1).locator('th').first()).toContainText('הערות');
+  await page.reload();
+  await expect(page.locator('thead tr').nth(1).locator('th').first()).toContainText('הערות');
+  await page.getByRole('button', { name: 'סדר עמודות מקורי' }).click();
+  await expect(page.locator('thead tr').nth(1).locator('th').first()).toContainText('מספר');
+
+  // Global search: a position opens its card, an agreement opens the agreements page filtered to it
+  const search = page.getByRole('combobox', { name: 'חיפוש בכל האפליקציה' });
+  await search.fill('אסאי');
+  await page.locator('.global-results button').first().click();
+  await expect(page.locator('.position-card')).toBeVisible();
+  await search.fill('סיוון');
+  await page.locator('.global-results button', { hasText: 'סיוון כהן' }).click();
+  await expect(page).toHaveURL(/p=trucks/);
+  await expect(page.locator('.trucks-table tbody tr')).toHaveCount(1);
+});
+
+test('wide screen: an open card takes one third and the table stays usable beside it', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mockSupabase(page);
+  await page.goto('/?p=list');
+  await page.locator('tbody tr[tabindex]').first().locator('td').nth(2).click();
+  await expect(page.locator('.position-card')).toBeVisible();
+  await expect(page.locator('.card-scrim')).toBeHidden();
+  const card = await page.locator('.position-card').boundingBox();
+  expect(card.width).toBeLessThan(1440 / 3 + 2);
+  await page.locator('tbody tr[tabindex]').nth(1).locator('td').nth(2).click();
+  await expect(page).toHaveURL(/pos=00000000-0000-4000-8000-000000000003/);
 });
