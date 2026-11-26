@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { approvalTone, harmonicaTone } from '../utils/colors.js';
+import { approvalTone, harmonicaTone, approvalKind } from '../utils/colors.js';
 import MapPage from './MapPage.jsx';
 
 
@@ -12,9 +12,9 @@ const rise = (i) => ({
 export default function HomePage({ positions, events, go, openCard, filterTo, trucks = [] }) {
   const total = positions.length;
   const count = (fn) => positions.filter(fn).length;
-  const approved = count(p => p.approval === 'מיקום מקובל');
-  const pending = count(p => p.approval === 'בבדיקה');
-  const rejected = count(p => p.approval === 'מיקום לא מקובל');
+  const approved = count(p => approvalKind(p.approval) === 'approved');
+  const pending = count(p => approvalKind(p.approval) === 'pending');
+  const rejected = count(p => approvalKind(p.approval) === 'rejected');
   const harmonicaWaiting = positions.filter(p => p.harmonicaStatus === 'הוגשה');
   const openCorrections = events.filter(e => e.kind === 'correction' && !e.resolved);
   const correctionsBy = openCorrections.reduce((m, e) => ({ ...m, [e.position_id]: (m[e.position_id] || 0) + 1 }), {});

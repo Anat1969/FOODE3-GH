@@ -15,11 +15,17 @@ export function qualityTone(value) {
   return 'gray';
 }
 
+// Approval values in the data: "מיקום מקובל", "בבדיקה", "מיקום לא מקובל", and the older "מקובלת" / "לא מקובלת".
+export function approvalKind(value) {
+  const v = String(value || '');
+  if (v.includes('לא מקובל')) return 'rejected';
+  if (v.includes('מקובל')) return 'approved';
+  if (v.includes('בבדיקה')) return 'pending';
+  return 'other';
+}
+
 export function approvalTone(value) {
-  if (value === 'מיקום מקובל') return 'green';
-  if (value === 'בבדיקה') return 'orange';
-  if (value === 'מיקום לא מקובל') return 'red';
-  return 'gray';
+  return { approved: 'green', pending: 'orange', rejected: 'red' }[approvalKind(value)] || 'gray';
 }
 
 export function harmonicaTone(value) {

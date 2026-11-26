@@ -1,3 +1,4 @@
+import { approvalKind } from './utils/colors.js';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import TopBar from './components/TopBar.jsx';
@@ -45,8 +46,10 @@ function buildUrl({ page, pos, tab, filter }) {
   return window.location.pathname + (s ? `?${s}` : '');
 }
 
+// Light is the default (white, air and soft ink). Only an explicit choice in settings is remembered.
+const THEME_KEY = 'foode3-theme-choice';
 function readTheme() {
-  try { return localStorage.getItem('foode3-theme') || 'dark'; } catch { return 'dark'; }
+  try { return localStorage.getItem(THEME_KEY) || 'light'; } catch { return 'light'; }
 }
 
 const LOAD_ERROR_TEXT = {
@@ -101,8 +104,12 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('foode3-theme', theme); } catch { /* ignore */ }
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f7f8f9' : '#101214');
   }, [theme]);
+  const chooseTheme = useCallback((t) => {
+    setTheme(t);
+    try { localStorage.setItem(THEME_KEY, t); } catch { /* storage blocked: choice lasts this visit */ }
+  }, []);
 
   // Keep the address bar in sync, so "copy link" and the back button reflect what is on screen.
   useEffect(() => {
@@ -189,9 +196,9 @@ export default function App() {
       return positions.filter(p => (p.complexName || 'ללא מתחם') === name);
     }
     return positions.filter(p => {
-      if (statsFilter === 'approved') return p.approval === 'מיקום מקובל';
-      if (statsFilter === 'pending') return p.approval === 'בבדיקה';
-      if (statsFilter === 'rejected') return p.approval === 'מיקום לא מקובל';
+      if (statsFilter === 'approved') return approvalKind(p.approval) === 'approved';
+      if (statsFilter === 'pending') return approvalKind(p.approval) === 'pending';
+      if (statsFilter === 'rejected') return approvalKind(p.approval) === 'rejected';
       if (statsFilter === 'harmonica') return p.harmonicaStatus === 'הוגשה';
       return true;
     });
@@ -272,7 +279,7 @@ export default function App() {
           {page === 'examples' && <ExamplesPage editMode={Boolean(editor)} onError={onError} />}
           {page === 'links' && <LinksViewer iframeUrl={iframeUrl} setIframeUrl={setIframeUrl} canEdit={Boolean(editor)} onError={onError} />}
           {page === 'policy' && <PolicyViewer />}
-          {page === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} editor={editor} />}
+          {page === 'settings' && <SettingsPage theme={theme} setTheme={chooseTheme} editor={editor} />}
         </main>
       )}
 

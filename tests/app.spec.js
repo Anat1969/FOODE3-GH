@@ -590,3 +590,18 @@ test('agreements: sort arrows and the slice window', async ({ page }) => {
   await page.locator('.slice-foot').getByRole('button', { name: 'ניקוי' }).click();
   await expect(page.locator('.trucks-table tbody tr')).toHaveCount(2);
 });
+
+test('light is the default, an explicit dark choice is remembered, and old approval values keep their color', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/?p=list');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  const ink = await page.evaluate(() => getComputedStyle(document.body).color);
+  expect(ink).toBe('rgb(46, 46, 43)');
+  // Position 3 holds the older value "מקובלת": it reads as accepted (green), not as unknown (gray)
+  await page.getByRole('button', { name: 'קיבוץ לפי מתחם' }).click();
+  await expect(page.locator('tbody tr[tabindex]').nth(2)).toHaveClass(/row-green/);
+  await page.locator('.tabs').getByRole('button', { name: 'הגדרות' }).click();
+  await page.getByRole('button', { name: 'כהה' }).click();
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
