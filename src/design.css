@@ -710,16 +710,16 @@ tbody.group-gap tr:hover { background: none; }
 /* Light theme: paper, layered panels, graphite accents */
 [data-theme="light"] body {
   background:
-    radial-gradient(1100px 520px at 90% -12%, rgba(255,255,255,0.95), transparent 60%),
-    radial-gradient(900px 480px at -10% 110%, rgba(31,95,191,0.07), transparent 60%),
-    linear-gradient(180deg, #f3f4f6, #e6e9ed 520px);
-  background-color: #e6e9ed;
+    radial-gradient(1100px 520px at 90% -12%, #ffffff, transparent 60%),
+    radial-gradient(900px 480px at -10% 110%, rgba(31,95,191,0.05), transparent 60%),
+    linear-gradient(180deg, #fafbfb, #f1f3f4 620px);
+  background-color: #f1f3f4;
   background-attachment: fixed;
 }
 [data-theme="light"] body::before {
   background-image:
-    linear-gradient(rgba(20,30,40,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20,30,40,0.05) 1px, transparent 1px);
+    linear-gradient(rgba(46,46,43,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46,46,43,0.035) 1px, transparent 1px);
 }
 [data-theme="light"] .topbar {
   background: rgba(255,255,255,0.78);
@@ -737,7 +737,7 @@ tbody.group-gap tr:hover { background: none; }
   border-color: rgba(16,24,32,0.10);
   box-shadow: 0 1px 0 #fff inset, 0 1px 2px rgba(20,30,40,0.06), 0 14px 30px -22px rgba(20,30,40,0.35);
 }
-[data-theme="light"] thead th { background: #f1f3f5; color: #3d444b; }
+[data-theme="light"] thead th { background: #f4f5f6; color: #45474a; }
 [data-theme="light"] .col-group-row th.col-group-header { background: #e9ecef; color: #3d444b; }
 [data-theme="light"] tbody tr:hover { background: #f3f5f8; }
 [data-theme="light"] tbody tr.selected { background: rgba(31,95,191,0.08); }
@@ -1122,6 +1122,7 @@ td .pill-select, .pill-select { padding: 4px 10px 4px 22px; background-position:
   .trucks-table td { display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; white-space: normal; min-width: 0; }
   .trucks-table td::before { content: attr(data-label); font-size: 11px; color: var(--text-muted); }
   .trucks-table td.mono-cell { position: absolute; inset-inline-end: 4px; top: 14px; }
+  .trucks-table td.mono-cell .cell-input { width: 4ch; text-align: end; }
   .trucks-table td.mono-cell::before, .trucks-table td.owner-cell::before { content: none; }
   .trucks-table td.owner-cell, .trucks-table td.tl-cell, .trucks-table td.notes-text { grid-column: 1 / -1; }
   .trucks-table td.owner-cell { padding-inline-end: 36px; font-size: 16px; }
@@ -1132,7 +1133,7 @@ td .pill-select, .pill-select { padding: 4px 10px 4px 22px; background-position:
 }
 
 /* Positions table: marks, filters, column drag, complex grouping */
-.mark { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; border: 0; font: 700 16px var(--font); line-height: 1; }
+.mark { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; border: 0; font: 600 16px var(--font); line-height: 1; }
 .mark.good { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
 .mark.bad { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
 .mark.editable { cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.18); transition: transform .12s, box-shadow .12s; }

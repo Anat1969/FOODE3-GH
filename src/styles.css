@@ -26,21 +26,21 @@
 }
 
 [data-theme="light"] {
-  --bg: #e9ecef;
-  --bg-2: #f4f5f7;
+  --bg: #f4f5f6;
+  --bg-2: #f8f9fa;
   --surface: #ffffff;
   --surface-solid: #ffffff;
   --surface-2: #f2f4f6;
   --surface-hover: #eceff2;
   --border: rgba(16, 24, 32, 0.12);
   --border-strong: rgba(16, 24, 32, 0.22);
-  --text: #15181b;
-  --text-muted: #525960;
+  --text: #2E2E2B;
+  --text-muted: #5a5d61;
   --green: #17693a;
   --orange: #8a5100;
   --red: #b3261e;
   --blue: #1f5fbf;
-  --accent: #1d2125;
+  --accent: #2E2E2B;
   --accent-ink: #ffffff;
   --shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 16px 34px -20px rgba(20,30,40,0.35), 0 2px 6px rgba(20,30,40,0.08);
   --shadow-lift: 0 30px 60px -24px rgba(20,30,40,0.45), 0 4px 14px rgba(20,30,40,0.12);
@@ -779,7 +779,7 @@ button {
   padding: 6px 0;
   font-size: 14px;
 }
-.report-card .big-number { font-size: 48px; font-weight: 700; color: var(--blue); }
+.report-card .big-number { font-size: 48px; font-weight: 600; color: var(--blue); }
 .report-card p { font-size: 14px; color: var(--text-muted); }
 
 /* Settings Page */
@@ -850,7 +850,7 @@ button {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .examples-col-header.good .examples-col-icon { background: rgba(52,168,83,0.15); color: var(--green); }
 .examples-col-header.bad .examples-col-icon { background: rgba(234,67,53,0.15); color: var(--red); }
@@ -953,7 +953,7 @@ button {
   border-radius: 50%;
   border: 2px solid;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1272,7 +1272,7 @@ button {
   height: 28px;
   border-radius: 50%;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1657,7 +1657,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 
 .toc-num {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   flex-shrink: 0;
   opacity: 0.7;
 }
@@ -1745,7 +1745,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 
 .chapter-heading {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 20px;
   padding: 14px 20px;
   border-radius: 10px;
@@ -1764,7 +1764,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   display: inline-block;
   color: #fff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 10px;
   border-radius: 6px;
   white-space: nowrap;
@@ -2035,7 +2035,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 }
 .landing-title-highlight {
   font-size: clamp(42px, 7vw, 72px);
-  font-weight: 700;
+  font-weight: 600;
   background: linear-gradient(135deg, var(--blue) 0%, var(--green) 60%, var(--orange) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -2111,7 +2111,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
 .landing-stat-card strong {
   display: block;
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--blue);
   margin-bottom: 4px;
 }
@@ -2262,7 +2262,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   border: 1px solid var(--border);
 }
 .report-summary-item { text-align: center; }
-.report-summary-item strong { display: block; font-size: 28px; font-weight: 700; }
+.report-summary-item strong { display: block; font-size: 28px; font-weight: 600; }
 .report-summary-item span { font-size: 13px; color: var(--text-muted); }
 .green-text strong { color: var(--green); }
 .orange-text strong { color: var(--orange); }
@@ -2294,7 +2294,7 @@ tbody tr.approval-red { border-inline-start: 3px solid var(--red); }
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
-.report-item-num { font-size: 18px; font-weight: 700; color: var(--text-muted); }
+.report-item-num { font-size: 18px; font-weight: 600; color: var(--text-muted); }
 .report-item-name { font-size: 17px; }
 .report-item-complex { font-size: 14px; color: var(--text-muted); }
 .report-severity-badge {

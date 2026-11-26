@@ -1,10 +1,11 @@
+import { approvalKind } from '../utils/colors.js';
 export default function StatsRail({ positions, activeFilter, onFilter }) {
   const count = (fn) => positions.filter(fn).length;
   const stats = [
     ['all', 'עמדות', positions.length, ''],
-    ['approved', 'מקובלות', count(p => p.approval === 'מיקום מקובל'), 'green'],
-    ['pending', 'בבדיקה', count(p => p.approval === 'בבדיקה'), 'orange'],
-    ['rejected', 'לא מקובלות', count(p => p.approval === 'מיקום לא מקובל'), 'red'],
+    ['approved', 'מקובלות', count(p => approvalKind(p.approval) === 'approved'), 'green'],
+    ['pending', 'בבדיקה', count(p => approvalKind(p.approval) === 'pending'), 'orange'],
+    ['rejected', 'לא מקובלות', count(p => approvalKind(p.approval) === 'rejected'), 'red'],
     ['harmonica', 'הרמוניקה ממתינה', count(p => p.harmonicaStatus === 'הוגשה'), 'blue'],
   ];
 
