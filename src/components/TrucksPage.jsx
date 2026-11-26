@@ -120,7 +120,7 @@ export default function TrucksPage({ trucks, save, remove, positions, canEdit, o
     <section className="table-shell panel trucks-page">
       <div className="section-title">
         <div>
-          <h2>הסכמי פודטראקים</h2>
+          <h2>בעלי פודטראק והסכמים</h2>
           <div className="truck-stats">
             <span><strong>{rows.length}</strong> הסכמים</span>
             <span className={soon ? 'orange' : ''}><strong>{soon}</strong> מסתיימים בחצי השנה הקרובה</span>

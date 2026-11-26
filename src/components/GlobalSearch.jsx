@@ -37,7 +37,7 @@ export default function GlobalSearch({ positions, trucks, openCard, openTrucks }
       <input
         type="search"
         value={q}
-        placeholder="חיפוש עמדה, עסק או בעלים"
+        placeholder="חיפוש עמדה או עסק"
         aria-label="חיפוש בכל האפליקציה"
         aria-expanded={open && Boolean(term)}
         aria-controls="global-search-results"

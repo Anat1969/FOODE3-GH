@@ -34,13 +34,17 @@ function position(i, extra = {}) {
     created_at: '2026-06-22T01:20:24Z',
     updated_at: '2026-06-22T01:20:24Z',
     deleted_at: null,
+    ...extra,
   };
 }
 
-async function mockSupabase(page, { editor = true } = {}) {
+// A wide 2:1 picture, to prove images are shown whole and not cropped.
+const WIDE_IMG = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="600" height="300" fill="#8ab8ff"/><rect x="0" y="0" width="40" height="300" fill="#d33"/><rect x="560" y="0" width="40" height="300" fill="#2a2"/></svg>')}`;
+
+async function mockSupabase(page, { editor = true, withImages = false } = {}) {
   const writes = [];
   const uploads = [];
-  const positions = [1, 2, 3, 4].map(i => position(i));
+  const positions = [1, 2, 3, 4].map(i => position(i, i === 1 && withImages ? { food_truck_image_url: WIDE_IMG } : {}));
   const tables = {
     foode_positions: positions,
     foode_documents: [{ id: 'd1', position_id: positions[0].id, kind: 'harmonica', title: 'הרמוניקה.pdf', file_url: 'https://example.com/h.pdf', file_path: 'x', mime: 'application/pdf', size: 120000, uploaded_by: 'ענת', created_at: '2026-10-01T10:00:00Z' }],
@@ -50,7 +54,10 @@ async function mockSupabase(page, { editor = true } = {}) {
       { id: 't1', number: '1', owner_name: 'רז פרי', business_label: 'בר משקאות', location: 'גבעת יונה', owner_type: 'חברה לתיירות', phone: '050-0000000', start_date: '2024-04-01', end_date: '2027-03-31', option_until: '2028-03-31', status: 'לא ידוע לגבי המשך ההסכם', position_id: positions[0].id },
       { id: 't2', number: '2', owner_name: 'סיוון כהן', business_label: '', location: 'נחל לכיש', owner_type: 'פרטי', phone: '', start_date: '2023-04-01', end_date: '2025-03-31', option_until: null, status: '', position_id: null },
     ],
-    foode_examples: [{ id: 'x1', type: 'good', title: 'ספסל מובנה', description: 'תיאור', imageUrl: null, created_at: '2026-06-22T00:00:00Z' }],
+    foode_examples: [
+      { id: 'x1', type: 'good', title: 'ספסל מובנה', description: 'תיאור', imageUrl: withImages ? WIDE_IMG : null, created_at: '2026-06-22T00:00:00Z' },
+      ...(withImages ? [{ id: 'x2', type: 'bad', title: 'שטיחון על המדרכה', description: '', imageUrl: WIDE_IMG, created_at: '2026-06-23T00:00:00Z' }] : []),
+    ],
   };
 
   if (editor) await page.addInitScript(() => localStorage.setItem('foode3-editor-key', 'test-key'));
@@ -138,7 +145,7 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
   await expect(page.locator('.city-logo')).toHaveCount(0);
   await expect(page.locator('.topbar').getByRole('button', { name: 'העתקת קישור' })).toHaveCount(0);
 
-  for (const name of ['רשימת עמדות', 'פודטראקים', 'מפת עמדות', 'דוח לטיפול', 'דוגמאות', 'קישורים', 'מדיניות', 'הגדרות']) {
+  for (const name of ['מיקומי עמדות', 'בעלי פודטראק', 'מפת עמדות', 'דוח לטיפול', 'דוגמאות', 'קישורים', 'מדיניות', 'הגדרות']) {
     await page.locator('.tabs').getByRole('button', { name }).click();
     await expect(page.locator('.tabs button.active')).toHaveText(name);
     await expect(page.locator('.topbar')).toBeVisible();
@@ -468,7 +475,7 @@ test('action report is read-only without the edit link', async ({ page }) => {
 test('agreements page: timeline, link to the position card, guarded edits', async ({ page }) => {
   const { writes } = await mockSupabase(page);
   await page.goto('/?p=trucks');
-  await expect(page.getByRole('heading', { name: 'הסכמי פודטראקים' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'בעלי פודטראק והסכמים' })).toBeVisible();
   await expect(page.locator('.trucks-table tbody tr')).toHaveCount(2);
   await expect(page.locator('.truck-stats')).toContainText('1 הסתיימו');
   await expect(page.locator('.truck-tl .tl-term.red')).toHaveCount(1);
@@ -604,4 +611,77 @@ test('light is the default, an explicit dark choice is remembered, and old appro
   await page.getByRole('button', { name: 'כהה' }).click();
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+test('tabs are named by what they hold', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/');
+  await expect(page.locator('.tabs').getByRole('button', { name: 'בעלי פודטראק' })).toBeVisible();
+  await expect(page.locator('.tabs').getByRole('button', { name: 'מיקומי עמדות' })).toBeVisible();
+  await expect(page.locator('.tabs').getByRole('button', { name: 'פודטראקים', exact: true })).toHaveCount(0);
+  await expect(page.locator('.tabs').getByRole('button', { name: 'רשימת עמדות' })).toHaveCount(0);
+});
+
+test('card photo is a 4:3 frame that shows the whole picture', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mockSupabase(page, { editor: false, withImages: true });
+  await page.goto('/?p=list&pos=00000000-0000-4000-8000-000000000001');
+  const frame = page.locator('.card-photo');
+  await expect(frame.locator('img')).toBeVisible();
+  const box = await frame.boundingBox();
+  expect(Math.abs(box.width / box.height - 4 / 3)).toBeLessThan(0.03);
+  expect(await frame.locator('img').evaluate(el => getComputedStyle(el).objectFit)).toBe('contain');
+  await page.screenshot({ path: 'test-results/card-photo.png' });
+});
+
+test('action report by business owner: grouped, mail drafted and logged', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { writes } = await mockSupabase(page);
+  await page.goto('/?p=report');
+  await page.getByRole('tab', { name: 'לפי בעל עסק' }).click();
+  const owner = page.locator('.report-cat', { hasText: 'דנה יזמית' });
+  await expect(owner).toHaveCount(1);
+  const noOwner = page.locator('.report-cat', { hasText: 'ללא בעל עסק מוגדר' });
+  await expect(noOwner).toHaveCount(1);
+  await expect(noOwner.locator('.owner-mail')).toHaveCount(0);
+  await owner.locator('.report-cat-head').click();
+  await expect(owner.locator('.fix-row').first()).toBeVisible();
+  await page.screenshot({ path: 'test-results/report-owner.png' });
+  await owner.locator('.owner-mail').click();
+  await expect.poll(() => writes.find(w => w.p_table === 'position_events' && w.p_data.kind === 'email' && w.p_data.meta.to === 'dana@example.com')).toBeTruthy();
+  // By topic, items with the same issue sit under one heading
+  await page.getByRole('tab', { name: 'לפי נושא' }).click();
+  await page.locator('.report-cat-head', { hasText: 'תשתיות' }).click();
+  await expect(page.locator('.report-cat.open .fix-group').first()).toContainText('חיבור מים');
+});
+
+test('examples: allowed and forbidden columns, photo 4:3 with a proportional caption', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mockSupabase(page, { withImages: true });
+  await page.goto('/?p=examples');
+  await expect(page.locator('.examples-col-header.good h3')).toHaveText('מותר');
+  await expect(page.locator('.examples-col-header.bad h3')).toHaveText('אסור');
+  const img = await page.locator('.example-image-wrap').first().boundingBox();
+  const cap = await page.locator('.example-caption').first().boundingBox();
+  expect(Math.abs(img.width / img.height - 4 / 3)).toBeLessThan(0.03);
+  expect(Math.abs(cap.width - img.width)).toBeLessThan(2);
+  expect(cap.height / img.height).toBeGreaterThan(0.2);
+  expect(cap.height / img.height).toBeLessThan(0.4);
+  await page.screenshot({ path: 'test-results/examples.png' });
+});
+
+test('light theme: a primary button stays readable', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/?p=report');
+  const btn = page.getByRole('tab', { name: 'לפי נושא' });
+  await expect(btn).toHaveClass(/primary/);
+  expect(await contrastOf(btn)).toBeGreaterThanOrEqual(4.5);
+});
+
+test('action report by owner on a phone has no sideways scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockSupabase(page);
+  await page.goto('/?p=report');
+  await page.getByRole('tab', { name: 'לפי בעל עסק' }).click();
+  await noHorizontalScroll(page);
 });
