@@ -549,3 +549,44 @@ test('wide screen: an open card takes one third and the table stays usable besid
   await page.locator('tbody tr[tabindex]').nth(1).locator('td').nth(2).click();
   await expect(page).toHaveURL(/pos=00000000-0000-4000-8000-000000000003/);
 });
+
+test('home: the map is at the center and a marker opens the card', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/');
+  await expect(page.locator('.home-map .map-embedded')).toBeVisible();
+  await expect(page.locator('.home-map .map-view-switch')).toHaveCount(0);
+  const marker = page.locator('.home-map .map-marker-pin').first();
+  await expect(marker).toBeVisible({ timeout: 15000 });
+  await marker.click({ force: true });
+  await expect(page.locator('.position-card')).toBeVisible();
+});
+
+test('card lists the linked agreement and opens it on the agreements page', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/?p=list&pos=00000000-0000-4000-8000-000000000001');
+  const item = page.locator('.card-trucks button');
+  await expect(item).toContainText('רז פרי');
+  await expect(item.locator('.pill')).toContainText('31.03.2027');
+  await item.click();
+  await expect(page).toHaveURL(/p=trucks/);
+  await expect(page.locator('.trucks-table tbody tr')).toHaveCount(1);
+});
+
+test('agreements: sort arrows and the slice window', async ({ page }) => {
+  await mockSupabase(page);
+  await page.goto('/?p=trucks');
+  await page.locator('.trucks-table .sort-button', { hasText: 'סיום' }).click();
+  await expect(page.locator('.trucks-table th.sorted .sort-arrow')).toHaveText('↑');
+  const firstOwner = page.locator('.trucks-table tbody tr').first().locator('input.cell-input.strong');
+  await expect(firstOwner).toHaveValue('סיוון כהן');
+  await page.locator('.trucks-table .sort-button', { hasText: 'סיום' }).click();
+  await expect(firstOwner).toHaveValue('רז פרי');
+
+  await page.getByRole('button', { name: 'חיתוך נתונים' }).click();
+  await page.locator('.slice-row select').first().selectOption('_end');
+  await page.locator('.slice-row select').nth(1).selectOption('הסתיים');
+  await expect(page.locator('.trucks-table tbody tr')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /חיתוך נתונים · 1/ })).toBeVisible();
+  await page.locator('.slice-foot').getByRole('button', { name: 'ניקוי' }).click();
+  await expect(page.locator('.trucks-table tbody tr')).toHaveCount(2);
+});

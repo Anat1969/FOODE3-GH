@@ -226,7 +226,7 @@ export default function App() {
         <LoadError error={loadError} onRetry={retry} />
       ) : (
         <main className={`main-area page-${page}`}>
-          {page === 'home' && <HomePage positions={positions} events={events.rows} go={go} openCard={openCard} filterTo={filterTo} />}
+          {page === 'home' && <HomePage positions={positions} events={events.rows} go={go} openCard={openCard} filterTo={filterTo} trucks={trucks.rows} />}
           {page === 'list' && (
             <>
               <StatsRail positions={positions} activeFilter={statsFilter} onFilter={(f) => setStatsFilter(prev => (prev === f ? null : f))} />
@@ -308,6 +308,8 @@ export default function App() {
               onShowOnMap={showOnMap}
               notify={notify}
               cardLink={cardLink}
+              trucks={trucks.rows.filter(t => t.position_id === cardPosition.id)}
+              openTrucks={openTrucks}
             />
         )}
       </AnimatePresence>
