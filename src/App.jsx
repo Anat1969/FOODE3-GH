@@ -13,6 +13,7 @@ import PolicyViewer from './components/PolicyViewer.jsx';
 import HomePage from './components/HomePage.jsx';
 import usePositions from './hooks/usePositions.js';
 import TrucksPage from './components/TrucksPage.jsx';
+import GlobalSearch from './components/GlobalSearch.jsx';
 import useRecords from './hooks/useRecords.js';
 import { checkEditor, getEditorKey } from './supabase.js';
 
@@ -79,6 +80,7 @@ export default function App() {
   const [theme, setTheme] = useState(readTheme);
   const [iframeUrl, setIframeUrl] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [trucksTerm, setTrucksTerm] = useState('');
   const skipPush = useRef(true);
 
   const notify = useCallback((text, kind = 'ok') => {
@@ -156,6 +158,12 @@ export default function App() {
     events.save(crypto.randomUUID(), { position_id: id, kind: approve ? 'approval' : 'status', body: approve ? 'ההרמוניקה אושרה' : 'סטטוס הרמוניקה: הוגשה', author: editor || '' }).catch(() => {});
   }, [update, events, editor]);
 
+  const openTrucks = useCallback((term) => {
+    setTrucksTerm(term || '');
+    setCardId(null);
+    setPage('trucks');
+  }, []);
+
   const startPin = useCallback((id) => {
     setPinningId(id);
     setCardId(null);
@@ -202,13 +210,14 @@ export default function App() {
 
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${page === 'list' && cardPosition ? 'card-docked' : ''}`}>
       <TopBar
         page={page}
         go={go}
         editor={editor}
         saveState={saveState}
         onEditorChange={setEditor}
+        search={<GlobalSearch positions={positions} trucks={trucks.rows} openCard={openCard} openTrucks={openTrucks} />}
       />
 
       {loading ? (
@@ -236,7 +245,7 @@ export default function App() {
               />
             </>
           )}
-          {page === 'trucks' && <TrucksPage trucks={trucks.rows} save={trucks.save} remove={trucks.remove} positions={positions} canEdit={Boolean(editor)} openCard={openCard} />}
+          {page === 'trucks' && <TrucksPage key={trucksTerm} initialTerm={trucksTerm} trucks={trucks.rows} save={trucks.save} remove={trucks.remove} positions={positions} canEdit={Boolean(editor)} openCard={openCard} />}
           {page === 'map' && (
             <MapPage
               positions={positions}

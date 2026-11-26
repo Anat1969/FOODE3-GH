@@ -26,7 +26,7 @@ function SaveIndicator({ saveState, editor }) {
   );
 }
 
-export default function TopBar({ page, go, editor, saveState, onEditorChange }) {
+export default function TopBar({ page, go, editor, saveState, onEditorChange, search }) {
   const ref = useRef(null);
   const menu = useRef(null);
 
@@ -83,6 +83,7 @@ export default function TopBar({ page, go, editor, saveState, onEditorChange }) 
           ))}
         </nav>
         <div className="topbar-end">
+          {search}
           <SaveIndicator saveState={saveState} editor={editor} />
           <ai-menu ref={menu} brand="ashdod" chat={DEV_CHAT_URL} research={RESEARCH_URL} />
         </div>
