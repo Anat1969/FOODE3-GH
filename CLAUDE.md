@@ -12,7 +12,7 @@
 ## נתונים: פרויקט Supabase משותף ASHDODMAP (`cbhexpybdggwzyakgagd`)
 - הפרויקט משותף לאפליקציות אחרות (shimur_, hb_ ועוד). לא לגעת בהן.
 - כל הטבלאות של האפליקציה בקידומת `foode_`, הדליים בקידומת `foode-`.
-- טבלאות: `foode_positions`, `foode_documents`, `foode_position_events` (היסטוריה: הערות לתיקון, אישורים, מיילים, שינויי סטטוס, רישומים), `foode_links`, `foode_examples`, `foode_editor_keys`.
+- טבלאות: `foode_positions`, `foode_documents`, `foode_position_events` (היסטוריה: הערות לתיקון, אישורים, מיילים, שינויי סטטוס, רישומים), `foode_links`, `foode_examples`, `foode_editor_keys`, `foode_trucks` (הסכמי פודטראקים מהאקסל, אופציונלית מקושרים לעמדה דרך `position_id`).
 - דליים: `foode-images` (תמונות), `foode-docs` (הרמוניקה ומסמכים).
 - הפרויקט הישן FOODE3 (`qgdubavuvvnpasgijyrk`) כבר לא בשימוש.
 
@@ -28,6 +28,7 @@
 - `src/supabase.js`: חיבור, מפתח עריכה, `write`, `uploadFile`.
 - `src/hooks/usePositions.js`: עמדות, עדכון אופטימי ושמירה מושהית (450ms) לכל עמדה.
 - `src/hooks/useRecords.js`: טבלה קטנה חיה (מסמכים, היסטוריה, קישורים, דוגמאות).
+- `src/components/TrucksPage.jsx` (`?p=trucks`): הסכמי פודטראקים. עריכה במקום, שמירה מושהית (450ms) דרך `foode_write`, ציר זמן להסכם (תקופה, אופציה, היום), צבע סיום לפי זמן שנותר (אדום הסתיים, כתום חצי שנה), חיפוש, קישור לכרטיס העמדה, ובנייד כל הסכם ככרטיס.
 - `src/components/PositionCard.jsx`: כרטיס העמדה. לשוניות: פרטים, תשתיות ואיכות, הרמוניקה, מסמכים, היסטוריה.
 - הכתובת משקפת את המצב: `?p=list&pos=<id>&tab=harmonica`, כך שאפשר לשתף קישור ישיר לכרטיס ולשונית.
 - עיצוב: `src/styles.css` (בסיס ישן) ומעליו `src/design.css` (שפת העיצוב).

@@ -46,6 +46,10 @@ async function mockSupabase(page, { editor = true } = {}) {
     foode_documents: [{ id: 'd1', position_id: positions[0].id, kind: 'harmonica', title: 'הרמוניקה.pdf', file_url: 'https://example.com/h.pdf', file_path: 'x', mime: 'application/pdf', size: 120000, uploaded_by: 'ענת', created_at: '2026-10-01T10:00:00Z' }],
     foode_position_events: [{ id: 'e1', position_id: positions[0].id, kind: 'correction', body: 'להגדיל את הצללה', author: 'ענת', resolved: false, meta: {}, created_at: '2026-10-02T10:00:00Z' }],
     foode_links: [{ id: 'l1', title: 'מצגת', url: 'https://example.com', created_at: '2026-06-22T00:00:00Z' }],
+    foode_trucks: [
+      { id: 't1', number: '1', owner_name: 'רז פרי', business_label: 'בר משקאות', location: 'גבעת יונה', owner_type: 'חברה לתיירות', phone: '050-0000000', start_date: '2024-04-01', end_date: '2027-03-31', option_until: '2028-03-31', status: 'לא ידוע לגבי המשך ההסכם', position_id: positions[0].id },
+      { id: 't2', number: '2', owner_name: 'סיוון כהן', business_label: '', location: 'נחל לכיש', owner_type: 'פרטי', phone: '', start_date: '2023-04-01', end_date: '2025-03-31', option_until: null, status: '', position_id: null },
+    ],
     foode_examples: [{ id: 'x1', type: 'good', title: 'ספסל מובנה', description: 'תיאור', imageUrl: null, created_at: '2026-06-22T00:00:00Z' }],
   };
 
@@ -134,7 +138,7 @@ test('home page maps the content and every top bar tab works', async ({ page }) 
   await expect(page.locator('.city-logo')).toHaveCount(0);
   await expect(page.locator('.topbar').getByRole('button', { name: 'העתקת קישור' })).toHaveCount(0);
 
-  for (const name of ['רשימת עמדות', 'מפת עמדות', 'דוח לטיפול', 'דוגמאות', 'קישורים', 'מדיניות', 'הגדרות']) {
+  for (const name of ['רשימת עמדות', 'פודטראקים', 'מפת עמדות', 'דוח לטיפול', 'דוגמאות', 'קישורים', 'מדיניות', 'הגדרות']) {
     await page.locator('.tabs').getByRole('button', { name }).click();
     await expect(page.locator('.tabs button.active')).toHaveText(name);
     await expect(page.locator('.topbar')).toBeVisible();
@@ -453,4 +457,33 @@ test('action report is read-only without the edit link', async ({ page }) => {
   await expect(page.locator('.report-cat.open .fix-check').first()).toBeDisabled();
   await expect(page.locator('.report-cat.open select')).toHaveCount(0);
   expect(writes).toHaveLength(0);
+});
+
+test('agreements page: timeline, link to the position card, guarded edits', async ({ page }) => {
+  const { writes } = await mockSupabase(page);
+  await page.goto('/?p=trucks');
+  await expect(page.getByRole('heading', { name: 'הסכמי פודטראקים' })).toBeVisible();
+  await expect(page.locator('.trucks-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.truck-stats')).toContainText('1 הסתיימו');
+  await expect(page.locator('.truck-tl .tl-term.red')).toHaveCount(1);
+  await page.locator('.trucks-table tbody tr').first().locator('input.cell-input.strong').fill('רז פרי בע״מ');
+  await expect.poll(() => writes.find(w => w.p_table === 'trucks' && w.p_data.owner_name === 'רז פרי בע״מ')).toBeTruthy();
+  await page.locator('.table-search-input').fill('לכיש');
+  await expect(page.locator('.trucks-table tbody tr')).toHaveCount(1);
+});
+
+test('agreements page read-only: the linked position opens its card', async ({ page }) => {
+  await mockSupabase(page, { editor: false });
+  await page.goto('/?p=trucks');
+  await expect(page.locator('.trucks-table input')).toHaveCount(0);
+  await page.locator('.trucks-table .pill.button.blue').first().click();
+  await expect(page.locator('.position-card')).toBeVisible();
+});
+
+test('agreements page on mobile has no horizontal page scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockSupabase(page);
+  await page.goto('/?p=trucks');
+  await expect(page.locator('.trucks-table')).toBeVisible();
+  await noHorizontalScroll(page);
 });

@@ -12,7 +12,6 @@ import ExamplesPage from './components/ExamplesPage.jsx';
 import PolicyViewer from './components/PolicyViewer.jsx';
 import HomePage from './components/HomePage.jsx';
 import usePositions from './hooks/usePositions.js';
-import useTrucks from './hooks/useTrucks.js';
 import TrucksPage from './components/TrucksPage.jsx';
 import useRecords from './hooks/useRecords.js';
 import { checkEditor, getEditorKey } from './supabase.js';
@@ -92,9 +91,9 @@ export default function App() {
   }, [notify]);
 
   const { positions, update, add, remove, loading, loadError, retry, saveState } = usePositions({ onError });
-  const trucksData = useTrucks({ onError });
   const docs = useRecords('documents', { onError });
   const events = useRecords('position_events', { onError });
+  const trucks = useRecords('trucks', { onError, order: 'number' });
 
   useEffect(() => { checkEditor().then(setEditor); }, []);
 
@@ -237,7 +236,7 @@ export default function App() {
               />
             </>
           )}
-          {page === 'trucks' && <TrucksPage trucks={trucksData.trucks} update={trucksData.update} positions={positions} editMode={Boolean(editor)} />}
+          {page === 'trucks' && <TrucksPage trucks={trucks.rows} save={trucks.save} remove={trucks.remove} positions={positions} canEdit={Boolean(editor)} openCard={openCard} />}
           {page === 'map' && (
             <MapPage
               positions={positions}
