@@ -41,7 +41,7 @@ export async function checkEditor() {
   return data || null;
 }
 
-// table: positions | links | examples | documents | position_events; op: upsert | remove
+// table: positions | links | examples | documents | position_events | trucks; op: upsert | remove
 export async function write(table, op, id, data = {}) {
   const { data: row, error } = await supabase.rpc('foode_write', {
     p_key: getEditorKey(),

@@ -1086,3 +1086,47 @@ td .pill-select, .pill-select { padding: 4px 10px 4px 22px; background-position:
   .report-head .print-btn, .report-cat-chevron, .fix-control button { display: none !important; }
   .report-cat { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
 }
+
+/* Food truck agreements */
+.truck-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 4px; font-size: 13.5px; color: var(--text-muted); }
+.truck-stats strong { color: var(--text); font-weight: 600; font-size: 15px; margin-inline-end: 3px; }
+.truck-stats .orange strong { color: var(--orange); }
+.truck-stats .red strong { color: var(--red); }
+.truck-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 4px 10px; font-size: 12px; color: var(--text-muted); }
+.truck-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.truck-legend i { position: relative; display: inline-block; width: 18px; height: 6px; border-radius: 3px; inset: auto; }
+.truck-legend i.tl-today { width: 2px; height: 12px; }
+.trucks-table td { white-space: nowrap; }
+.trucks-table td.notes-text { white-space: normal; min-width: 150px; }
+.trucks-table td.end-red { color: var(--red); font-weight: 600; }
+.trucks-table td.end-orange { color: var(--orange); font-weight: 600; }
+.truck-tl { position: relative; display: block; width: 160px; height: 14px; border-radius: 7px; background: color-mix(in srgb, var(--text-muted) 10%, transparent); }
+.truck-tl i { position: absolute; top: 4px; height: 6px; border-radius: 3px; }
+.tl-term.green { background: var(--green); }
+.tl-term.orange { background: var(--orange); }
+.tl-term.red { background: var(--red); }
+.tl-term.gray { background: var(--text-muted); }
+.tl-option { background: color-mix(in srgb, var(--green) 30%, transparent); }
+.truck-tl i.tl-today, .truck-legend i.tl-today { background: var(--text); }
+.truck-tl i.tl-today { top: 0; height: 14px; width: 2px; }
+.pill-select.tone-gray { color: var(--text); border-color: var(--border); }
+.trucks-table .owner-cell { min-width: 150px; }
+.trucks-table .owner-business { display: block; font-size: 12.5px; color: var(--text-muted); }
+.trucks-table .owner-business .cell-input { font-size: 12.5px; color: var(--text-muted); }
+.trucks-table input[type="date"].cell-input { width: 118px; }
+.trucks-table .truck-tl { width: 120px; }
+@media (max-width: 760px) {
+  .trucks-table thead { display: none; }
+  .trucks-table, .trucks-table tbody { display: block; }
+  .trucks-table tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; padding: 14px 4px; border-bottom: 1px solid var(--border); position: relative; }
+  .trucks-table td { display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; white-space: normal; min-width: 0; }
+  .trucks-table td::before { content: attr(data-label); font-size: 11px; color: var(--text-muted); }
+  .trucks-table td.mono-cell { position: absolute; inset-inline-end: 4px; top: 14px; }
+  .trucks-table td.mono-cell::before, .trucks-table td.owner-cell::before { content: none; }
+  .trucks-table td.owner-cell, .trucks-table td.tl-cell, .trucks-table td.notes-text { grid-column: 1 / -1; }
+  .trucks-table td.owner-cell { padding-inline-end: 36px; font-size: 16px; }
+  .trucks-table .truck-tl { width: 100%; }
+  .trucks-table input[type="date"].cell-input { width: 100%; }
+  .trucks-table td.remove-cell { position: absolute; inset-inline-end: 0; bottom: 10px; }
+  .trucks-table td.remove-cell::before { content: none; }
+}
